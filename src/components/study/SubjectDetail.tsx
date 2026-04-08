@@ -105,183 +105,180 @@ export function SubjectDetail() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Button
-          variant="outline"
-          className="h-auto py-4 flex flex-col items-center gap-2"
-          onClick={() => setShowSlideUpload(true)}
-        >
-          <Upload className="h-6 w-6" />
-          <span>Slayt Ekle</span>
-        </Button>
+      <div className="rounded-[2rem] border border-slate-200/80 bg-slate-50 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/80">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Button
+            variant="outline"
+            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+            onClick={() => setShowSlideUpload(true)}
+          >
+            <Upload className="h-6 w-6" />
+            <span>Slayt Ekle</span>
+          </Button>
 
-        <Button
-          variant="outline"
-          className="h-auto py-4 flex flex-col items-center gap-2"
-          onClick={() => subject.slides.length > 0 ? setView('study') : setShowSlideUpload(true)}
-        >
-          <BookOpen className="h-6 w-6" />
-          <span>Çalış</span>
-        </Button>
+          <Button
+            variant="outline"
+            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+            onClick={() => subject.slides.length > 0 ? setView('study') : setShowSlideUpload(true)}
+          >
+            <BookOpen className="h-6 w-6" />
+            <span>Çalış</span>
+          </Button>
 
-        <Button
-          variant="outline"
-          className="h-auto py-4 flex flex-col items-center gap-2"
-          onClick={() => setView('planner')}
-        >
-          <Calendar className="h-6 w-6" />
-          <span>Planla</span>
-        </Button>
+          <Button
+            variant="outline"
+            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+            onClick={() => setView('planner')}
+          >
+            <Calendar className="h-6 w-6" />
+            <span>Planla</span>
+          </Button>
 
-        <Button
-          variant="outline"
-          className="h-auto py-4 flex flex-col items-center gap-2"
-          onClick={() => setView('stats')}
-        >
-          <BarChart3 className="h-6 w-6" />
-          <span>İstatistik</span>
-        </Button>
+          <Button
+            variant="outline"
+            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+            onClick={() => setView('stats')}
+          >
+            <BarChart3 className="h-6 w-6" />
+            <span>İstatistik</span>
+          </Button>
+        </div>
       </div>
 
       {/* Main Content */}
       <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
-          <TabsTrigger value="overview" className="whitespace-nowrap justify-center">Genel</TabsTrigger>
-          <TabsTrigger value="study" className="whitespace-nowrap justify-center">Öğren</TabsTrigger>
-          <TabsTrigger value="quiz" className="whitespace-nowrap justify-center">Quiz</TabsTrigger>
-          <TabsTrigger value="planner" className="whitespace-nowrap justify-center">Plan</TabsTrigger>
-          <TabsTrigger value="spaced" className="whitespace-nowrap justify-center">Tekrar</TabsTrigger>
-          <TabsTrigger value="stats" className="whitespace-nowrap justify-center">İstatistik</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 rounded-3xl border border-slate-200/80 bg-slate-50 p-1 dark:border-slate-800/70 dark:bg-slate-900/80">
+          <TabsTrigger value="overview" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Genel</TabsTrigger>
+          <TabsTrigger value="study" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Öğren</TabsTrigger>
+          <TabsTrigger value="quiz" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Quiz</TabsTrigger>
+          <TabsTrigger value="planner" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Plan</TabsTrigger>
+          <TabsTrigger value="spaced" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Tekrar</TabsTrigger>
+          <TabsTrigger value="stats" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">İstatistik</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Slides */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Slaytlar
-                </CardTitle>
-                <CardDescription>
-                  {subject.slides.length} slayt
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {subject.slides.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">Henüz slayt yok</p>
-                    <Button onClick={() => setShowSlideUpload(true)}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Slayt Ekle
-                    </Button>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[200px]">
-                    <div className="space-y-2">
-                      {subject.slides.map((slide, idx) => (
-                        <div 
-                          key={slide.id} 
-                          className="p-3 border rounded-lg flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {idx + 1}.
-                            </span>
-                            <span className="font-medium">{slide.title}</span>
-                          </div>
-                          {slide.imageUrl && (
-                            <span className="text-xs text-muted-foreground">Görüntü</span>
-                          )}
-                        </div>
-                      ))}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <Card className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50 p-5 dark:border-slate-800/70 dark:bg-slate-950/80">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+                    <BookOpen className="h-5 w-5" />
+                    Slaytlar
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-slate-500 dark:text-slate-400">
+                    {subject.slides.length} slayt
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {subject.slides.length === 0 ? (
+                    <div className="text-center py-10">
+                      <p className="text-slate-500 dark:text-slate-400 mb-4">Henüz slayt yok</p>
+                      <Button onClick={() => setShowSlideUpload(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Slayt Ekle
+                      </Button>
                     </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <ScrollArea className="h-[220px] rounded-3xl border border-slate-200/70 bg-white p-3 dark:border-slate-800/70 dark:bg-slate-950/80">
+                      <div className="space-y-3">
+                        {subject.slides.map((slide, idx) => (
+                          <div 
+                            key={slide.id} 
+                            className="flex items-center justify-between rounded-3xl border border-slate-200/80 bg-slate-50 p-4 dark:border-slate-800/70 dark:bg-slate-900/80"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{idx + 1}</span>
+                              <span className="font-medium text-slate-900 dark:text-slate-100">{slide.title}</span>
+                            </div>
+                            {slide.imageUrl && (
+                              <span className="rounded-full bg-slate-200 px-3 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300">Görüntü</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
 
-            {/* Quizzes */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Quizler
-                </CardTitle>
-                <CardDescription>
-                  {quizzes.length} quiz
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {quizzes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">Henüz quiz yok</p>
-                    <Button onClick={() => setView('quiz')}>
+              <Card className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50 p-5 dark:border-slate-800/70 dark:bg-slate-950/80">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+                    <Brain className="h-5 w-5" />
+                    Quizler
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-slate-500 dark:text-slate-400">
+                    {quizzes.length} quiz
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {quizzes.length === 0 ? (
+                    <div className="text-center py-10">
+                      <p className="text-slate-500 dark:text-slate-400 mb-4">Henüz quiz yok</p>
+                      <Button onClick={() => setView('quiz')}>
+                        <Brain className="h-4 w-4 mr-2" />
+                        Quiz Oluştur
+                      </Button>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[220px] rounded-3xl border border-slate-200/80 bg-white p-3 dark:border-slate-800/70 dark:bg-slate-950/80">
+                      <div className="space-y-3">
+                        {quizzes.map(quiz => (
+                          <div 
+                            key={quiz.id} 
+                            className="flex items-center justify-between rounded-3xl border border-slate-200/80 bg-slate-50 p-4 dark:border-slate-800/70 dark:bg-slate-900/80"
+                          >
+                            <div>
+                              <p className="font-medium text-slate-900 dark:text-slate-100">{quiz.title}</p>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">{quiz.questions.length} soru</p>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => setActiveQuiz(quiz)}
+                            >
+                              <Play className="h-4 w-4 mr-1" />
+                              Başla
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[1.75rem] border border-slate-200/80 bg-slate-50 p-5 dark:border-slate-800/70 dark:bg-slate-950/80">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+                    <Brain className="h-5 w-5" />
+                    Aralıklı Tekrar
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-slate-500 dark:text-slate-400">
+                    {state.spacedCards.filter(c => c.subjectId === id).length} kart
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setView('quiz')}
+                    >
                       <Brain className="h-4 w-4 mr-2" />
                       Quiz Oluştur
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setView('spaced')}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Tekrar Et
+                    </Button>
                   </div>
-                ) : (
-                  <ScrollArea className="h-[200px]">
-                    <div className="space-y-2">
-                      {quizzes.map(quiz => (
-                        <div 
-                          key={quiz.id} 
-                          className="p-3 border rounded-lg flex items-center justify-between"
-                        >
-                          <div>
-                            <p className="font-medium">{quiz.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {quiz.questions.length} soru
-                            </p>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            onClick={() => setActiveQuiz(quiz)}
-                          >
-                            <Play className="h-4 w-4 mr-1" />
-                            Başla
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Spaced Repetition */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Aralıklı Tekrar
-                </CardTitle>
-                <CardDescription>
-                  {state.spacedCards.filter(c => c.subjectId === id).length} kart
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setView('quiz')}
-                  >
-                    <Brain className="h-4 w-4 mr-2" />
-                    Quiz Oluştur
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => setView('spaced')}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Tekrar Et
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
 
