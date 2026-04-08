@@ -10,6 +10,12 @@ import type {
   SpacedRepetitionCard,
   StudyStats 
 } from '@/types/study';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { useLoggedInAccounts } from '@/hooks/useLoggedInAccounts';
+import type { GoogleUser } from '@/hooks/useGoogleAuth';
+import { loadFromIndexedDB } from '@/lib/indexeddbUtils';
+import type { StudyAppState } from '@/types/study';
 
 const initialStats: StudyStats = {
   totalStudyTime: 0,
@@ -48,67 +54,8 @@ interface StudyAppContextType {
 
 const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined);
 
-const DB_NAME = 'study-app-db';
-const DB_VERSION = 1;
-const STORE_NAME = 'app-state';
-
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-}
-
-// IndexedDB helpers
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-    };
-  });
-}
-
-async function saveToIndexedDB(state: StudyAppState): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.put(JSON.stringify(state), 'state');
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve();
-    
-    transaction.oncomplete = () => db.close();
-  });
-}
-
-async function loadFromIndexedDB(): Promise<StudyAppState> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get('state');
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      if (request.result) {
-        try {
-          resolve(JSON.parse(request.result));
-        } catch {
-          resolve(initialState);
-        }
-      } else {
-        resolve(initialState);
-      }
-    };
-    
-    transaction.oncomplete = () => db.close();
-  });
 }
 
 // Compress image data URL for storage efficiency
@@ -138,41 +85,61 @@ async function compressImage(dataUrl: string, quality = 0.6): Promise<string> {
 }
 
 export function StudyAppProvider({ children }: { children: ReactNode }) {
+  const { currentUser, googleAccount } = useLoggedInAccounts();
+  const googleUser = (currentUser as any)?.googleUser || googleAccount?.googleUser as GoogleUser | null;
+const drive = useGoogleDrive(googleUser);
+const googleAuth = useGoogleAuth();
   const [state, setState] = useState<StudyAppState>(initialState);
   const [isStorageReady, setIsStorageReady] = useState(false);
+  const [driveReady, setDriveReady] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
-  // Load from IndexedDB on mount
+  // Load from Drive or IndexedDB fallback
   useEffect(() => {
-    loadFromIndexedDB()
-      .then((savedState) => {
-        setState(savedState);
-        setIsStorageReady(true);
-      })
-      .catch((error) => {
-        console.error('Failed to load from IndexedDB:', error);
-        setIsStorageReady(true);
-      });
-  }, []);
+    const loadData = async () => {
+      if (drive.isLoading || !driveReady || !googleUser || !googleAuth.gapiLoaded) return;
 
-  // Debounced save to IndexedDB
-  useEffect(() => {
-    if (!isStorageReady) return;
-    
-    setPendingSave(true);
-    const timeoutId = setTimeout(async () => {
-      if (pendingSave) {
-        try {
-          await saveToIndexedDB(state);
-        } catch (error) {
-          console.error('Failed to save to IndexedDB:', error);
+      try {
+        if (drive.files.length > 0) {
+          // Load latest Drive file
+          const latestFile = drive.files[0];
+          const loadedState = await drive.loadState(latestFile.id);
+          setState(loadedState);
+        } else {
+          // Fallback to local
+          const localState = await loadFromIndexedDB();
+          setState(localState);
         }
-        setPendingSave(false);
+        setIsStorageReady(true);
+        setDriveReady(true);
+      } catch (error) {
+        console.error('Drive load failed, using local fallback:', error);
+        const localState = await loadFromIndexedDB();
+        setState(localState);
+        setIsStorageReady(true);
       }
-    }, 500); // Debounce saves
+    };
+
+    loadData();
+  }, [drive.files.length, drive.isLoading, googleUser, driveReady, drive.gapiLoaded]);
+
+  // Auto-save to Drive on state change (debounced)
+  useEffect(() => {
+    if (!isStorageReady || !autoSaveEnabled || !drive.gapiLoaded || drive.isLoading || !googleUser) return;
+
+    const timeoutId = setTimeout(async () => {
+      setPendingSave(true);
+      try {
+        await drive.saveState(state);
+      } catch (error) {
+        console.error('Drive save failed:', error);
+      }
+      setPendingSave(false);
+    }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [state, isStorageReady]);
+  }, [state]);
 
   const addSubject = useCallback((name: string, description?: string, color = '#6366f1'): Subject => {
     const subject: Subject = {

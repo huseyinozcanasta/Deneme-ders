@@ -10,6 +10,7 @@ export interface GoogleUser {
 }
 
 const GOOGLE_CLIENT_ID = '487543549178-batpljj5eclugfm7e95isksf575hnudr.apps.googleusercontent.com';
+const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 export function useGoogleAuth() {
   const [user, setUser] = useState<GoogleUser | null>(null);
@@ -24,19 +25,47 @@ export function useGoogleAuth() {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      script.onload = initializeGoogle;
+      script.onload = () => {
+        initializeGoogleSignIn();
+        loadGapiClient();
+      };
       document.head.appendChild(script);
     } else {
-      initializeGoogle();
+      initializeGoogleSignIn();
     }
     setIsLoading(false);
   }, []);
 
-  const initializeGoogle = () => {
-    if (window.google && window.google.accounts && window.google.accounts.id) {
-      window.google.accounts.id.initialize({
+  const initializeGoogleSignIn = () => {
+    const w = window as any;
+    if (w.google && w.google.accounts && w.google.accounts.id) {
+      w.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
+      });
+    }
+  };
+
+  const loadGapiClient = async () => {
+    if (document.querySelector('#gapi-client')) return;
+    
+    const gapiScript = document.createElement('script');
+    gapiScript.id = 'gapi-client';
+    gapiScript.src = 'https://apis.google.com/js/api.js';
+    gapiScript.onload = initGapiClient;
+    document.head.appendChild(gapiScript);
+  };
+
+  const initGapiClient = async () => {
+    const w = window as any;
+    if (w.gapi) {
+      await new Promise((resolve, reject) => {
+        w.gapi.load('client:auth2:drive-share', { callback: resolve, onerror: reject });
+      });
+      await w.gapi.client.init({
+        clientId: GOOGLE_CLIENT_ID,
+        scope: SCOPES.join(' '),
+        discoveryDocs: ['https://www.googleapis.com/discovery/v3/apis/drive/v3/rest'],
       });
     }
   };
@@ -80,11 +109,24 @@ export function useGoogleAuth() {
   const signOut = useCallback(() => {
     setUser(null);
     localStorage.removeItem('google_user');
-    // Note: Full sign-out requires gapi.auth2 which needs more setup
     toast({
       title: 'Google oturumu kapatıldı',
     });
   }, [toast]);
+
+  const [gapiLoaded, setGapiLoaded] = useState(false);
+
+  useEffect(() => {
+    const checkGapi = async () => {
+      const w = window as any;
+      if (w.gapi?.client) {
+        setGapiLoaded(true);
+      }
+    };
+    checkGapi();
+    const interval = setInterval(checkGapi, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   return {
     user,
@@ -92,6 +134,7 @@ export function useGoogleAuth() {
     signOut,
     isSignedIn: !!user,
     isLoading,
+    gapiLoaded,
   };
 }
 

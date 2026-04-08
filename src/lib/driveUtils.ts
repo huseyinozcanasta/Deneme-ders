@@ -12,11 +12,18 @@ export async function exportStudyDataToDrive(
   user: GoogleUser,
   filename = `studyflow-${user.email.replace(/[@.]/g, '_')}-${new Date().toISOString().slice(0, 10)}.json`
 ): Promise<string> {
+  // General app state export (StudyAppState + other data)
+  const appData = {
+    studyState: state,
+    timestamp: Date.now(),
+    version: '1.0',
+  };
+
   if (!window.gapi?.client?.drive) {
     throw new Error('Google Drive API not loaded');
   }
 
-  const fileContent = JSON.stringify(state, null, 2);
+  const fileContent = JSON.stringify(appData, null, 2);
   const bytes = new TextEncoder().encode(fileContent);
   const arrayBuffer = bytes.buffer;
   const blob = new Blob([arrayBuffer], { type: 'application/json' });
@@ -55,7 +62,8 @@ export async function loadStudyDataFromDrive(
     alt: 'media',
   });
 
-  return JSON.parse(response.body);
+  const appData = JSON.parse(response.body);
+  return appData.studyState;
 }
 
 export function getDriveFileList(user: GoogleUser): Promise<any[]> {

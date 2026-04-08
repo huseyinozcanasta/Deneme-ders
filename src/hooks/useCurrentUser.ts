@@ -2,11 +2,20 @@ import { type NLoginType, NUser, useNostrLogin } from '@nostrify/react/login';
 import { useNostr } from '@nostrify/react';
 import { useCallback, useMemo } from 'react';
 
-import { useAuthor } from './useAuthor.ts';
+import { useAuthor } from './useAuthor';
+import type { GoogleUser } from './useGoogleAuth';
+import { useGoogleAuth } from './useGoogleAuth';
+
+export interface HybridUser {
+  type: 'nostr' | 'google';
+  nostrUser?: NUser;
+  googleUser?: GoogleUser;
+}
 
 export function useCurrentUser() {
   const { nostr } = useNostr();
   const { logins } = useNostrLogin();
+  const googleAuth = useGoogleAuth();
 
   const loginToUser = useCallback((login: NLoginType): NUser  => {
     switch (login.type) {
@@ -37,12 +46,20 @@ export function useCurrentUser() {
     return users;
   }, [logins, loginToUser]);
 
-  const user = users[0] as NUser | undefined;
-  const author = useAuthor(user?.pubkey);
+  const nostrUser = users[0] as NUser | undefined;
+  const googleUser = googleAuth.user;
+  const author = useAuthor(nostrUser?.pubkey);
+
+  const currentUser: HybridUser = {
+    type: googleUser ? 'google' : 'nostr',
+    ...(googleUser && { googleUser }),
+    ...(nostrUser && { nostrUser }),
+  };
 
   return {
-    user,
+    user: currentUser,
     users,
+    googleUser,
     ...author.data,
   };
 }
