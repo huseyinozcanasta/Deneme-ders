@@ -158,89 +158,67 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">{subject.name}</h2>
-          <p className="text-sm text-muted-foreground">
-            {studyMode === 'learn' ? 'AI Destekli Öğrenme' : 'Tekrar Modu'}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
-          <Button variant="outline" size="sm" onClick={shuffleSlides}>
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Karıştır
-          </Button>
-          <Button 
-            variant={studyMode === 'learn' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setStudyMode('learn')}
-          >
-            <BookOpen className="h-4 w-4 mr-1" />
-            Öğren
-          </Button>
-          <Button 
-            variant={studyMode === 'review' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setStudyMode('review')}
-          >
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Tekrar
-          </Button>
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-lg font-bold flex-1">{subject.name}</h2>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={shuffleSlides}
+          className="hidden sm:inline-flex"
+        >
+          <RotateCcw className="h-4 w-4 mr-1" />
+          Karıştır
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={shuffleSlides}
+          className="sm:hidden"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Progress */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">İlerleme</span>
-            <span className="text-sm text-muted-foreground">
-              {studiedSlides.size} / {subject.slides.length} slayt
-            </span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </CardContent>
-      </Card>
-
       {/* Main Study Card */}
-      <Card className="min-h-[420px] md:min-h-[500px]">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <Badge variant="outline">
-              Slayt {currentIndex + 1} / {subject.slides.length}
-            </Badge>
+      <Card className="min-h-[380px] md:min-h-[500px]">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <Badge variant="outline" className="text-xs">
+                {currentIndex + 1} / {subject.slides.length}
+              </Badge>
+              <CardTitle className="text-base leading-tight mt-2 line-clamp-2">{currentSlide.title}</CardTitle>
+            </div>
             {studiedSlides.has(currentIndex) && (
-              <Badge className="bg-green-500">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                İncelendi
+              <Badge className="bg-green-500 flex-shrink-0">
+                <CheckCircle className="h-3 w-3" />
               </Badge>
             )}
           </div>
-          <CardTitle className="text-2xl">{currentSlide.title}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-3">
           <Tabs defaultValue="content" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
-              <TabsTrigger value="content" className="gap-1 justify-center whitespace-nowrap">
-                <BookOpen className="h-4 w-4" />
-                İçerik
+            <TabsList className="flex w-full gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
+              <TabsTrigger value="content" className="flex-1 gap-1 px-2 py-1 text-xs sm:text-sm">
+                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">İçerik</span>
               </TabsTrigger>
-              <TabsTrigger value="ai" className="gap-1 justify-center whitespace-nowrap">
-                <Sparkles className="h-4 w-4" />
-                AI Özet
-                {isGeneratingSummary && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
+              <TabsTrigger value="ai" className="flex-1 gap-1 px-2 py-1 text-xs sm:text-sm">
+                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">AI Özet</span>
+                {isGeneratingSummary && <Loader2 className="h-2 w-2 sm:h-3 sm:w-3 animate-spin" />}
               </TabsTrigger>
-              <TabsTrigger value="notes" className="gap-1 justify-center whitespace-nowrap">
-                <MessageSquare className="h-4 w-4" />
-                Notlar
+              <TabsTrigger value="notes" className="flex-1 gap-1 px-2 py-1 text-xs sm:text-sm">
+                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Notlar</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Content Tab */}
-            <TabsContent value="content" className="mt-4">
-              <ScrollArea className="h-[260px] sm:h-[320px] pr-4">
+            <TabsContent value="content" className="mt-2">
+              <ScrollArea className="h-[180px] sm:h-[300px] pr-4">
                 <div className="space-y-4">
                   {currentSlide.imageUrl && (
                     <img 
@@ -257,8 +235,8 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
             </TabsContent>
 
             {/* AI Summary Tab */}
-            <TabsContent value="ai" className="mt-4">
-              <ScrollArea className="h-[260px] sm:h-[320px] pr-4">
+            <TabsContent value="ai" className="mt-2">
+              <ScrollArea className="h-[180px] sm:h-[300px] pr-4">
                 {!hasApiKey ? (
                   <div className="space-y-4">
                     <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -349,8 +327,8 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
             </TabsContent>
 
             {/* Notes Tab */}
-            <TabsContent value="notes" className="mt-4">
-              <ScrollArea className="h-[260px] sm:h-[320px] pr-4">
+            <TabsContent value="notes" className="mt-2">
+              <ScrollArea className="h-[180px] sm:h-[300px] pr-4">
                 <div className="space-y-4">
                   {currentSlide.notes ? (
                     <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
