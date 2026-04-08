@@ -512,6 +512,7 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
   const handleAnswer = (idx: number) => {
     if (showResult) return;
     setSelectedAnswer(idx);
+    setShowResult(true); // Show result immediately when answer is selected
   };
 
   const nextQuestion = () => {
@@ -519,8 +520,8 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
     
     const newAnswers = [...answers, selectedAnswer];
     setAnswers(newAnswers);
-    setShowResult(true);
 
+    // Wait a bit before moving to next question
     setTimeout(() => {
       if (currentQuestion < quiz.questions.length - 1) {
         setCurrentQuestion(prev => prev + 1);
@@ -656,7 +657,7 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
       {/* Navigation */}
       <Button 
         onClick={nextQuestion} 
-        disabled={selectedAnswer === null || !showResult}
+        disabled={selectedAnswer === null}
         className="w-full"
       >
         {currentQuestion < quiz.questions.length - 1 ? (
