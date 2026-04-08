@@ -103,7 +103,7 @@ export function SubjectDetail() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Button
           variant="outline"
           className="h-auto py-4 flex flex-col items-center gap-2"
@@ -143,13 +143,13 @@ export function SubjectDetail() {
 
       {/* Main Content */}
       <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview">Genel</TabsTrigger>
-          <TabsTrigger value="study">Öğren</TabsTrigger>
-          <TabsTrigger value="quiz">Quiz</TabsTrigger>
-          <TabsTrigger value="planner">Plan</TabsTrigger>
-          <TabsTrigger value="spaced">Tekrar</TabsTrigger>
-          <TabsTrigger value="stats">İstatistik</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1">
+          <TabsTrigger value="overview" className="whitespace-nowrap justify-center">Genel</TabsTrigger>
+          <TabsTrigger value="study" className="whitespace-nowrap justify-center">Öğren</TabsTrigger>
+          <TabsTrigger value="quiz" className="whitespace-nowrap justify-center">Quiz</TabsTrigger>
+          <TabsTrigger value="planner" className="whitespace-nowrap justify-center">Plan</TabsTrigger>
+          <TabsTrigger value="spaced" className="whitespace-nowrap justify-center">Tekrar</TabsTrigger>
+          <TabsTrigger value="stats" className="whitespace-nowrap justify-center">İstatistik</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">

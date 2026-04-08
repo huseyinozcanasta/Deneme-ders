@@ -577,7 +577,7 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
               </div>
             </div>
 
-            <Button onClick={onComplete} className="w-full">
+            <Button onClick={() => onComplete?.(finalScore.correct, finalScore.total)} className="w-full">
               <ArrowRight className="h-4 w-4 mr-2" />
               Geri Dön
             </Button>

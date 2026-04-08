@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File, AlertCircle, CloudUpload } from 'lucide-react';
+import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File as FileIcon, AlertCircle, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -391,7 +391,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2 p-3 border rounded-lg">
                       <div className="h-8 w-8 rounded bg-red-100 dark:bg-red-950/30 flex items-center justify-center">
-                        <File className="h-4 w-4 text-red-600" />
+                        <FileIcon className="h-4 w-4 text-red-600" />
                       </div>
                       <div>
                         <p className="font-medium">PDF</p>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -40,24 +40,24 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [studyMode, setStudyMode] = useState<'learn' | 'review'>('learn');
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
   const [studiedSlides, setStudiedSlides] = useState<Set<number>>(new Set());
-  const [startTime, setStartTime] = useState<number>(Date.now());
   const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const sessionIdRef = useRef<string | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     const session = addStudySession(subject.id, 'slide');
-    setSessionId(session.id);
-    setStartTime(Date.now());
+    sessionIdRef.current = session.id;
+    startTimeRef.current = Date.now();
     return () => {
-      if (sessionId) {
-        const duration = Math.round((Date.now() - startTime) / 60000);
-        completeSession(sessionId, duration);
+      if (sessionIdRef.current) {
+        const duration = Math.round((Date.now() - startTimeRef.current) / 60000);
+        completeSession(sessionIdRef.current, duration);
       }
     };
-  }, []);
+  }, [addStudySession, completeSession, subject.id]);
 
   // Generate AI summary when slide changes
   useEffect(() => {
@@ -125,9 +125,9 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
       setCurrentIndex(prev => prev + 1);
       setShowAnswer(false);
     } else {
-      if (sessionId) {
-        const duration = Math.round((Date.now() - startTime) / 60000);
-        completeSession(sessionId, duration);
+      if (sessionIdRef.current) {
+        const duration = Math.round((Date.now() - startTimeRef.current) / 60000);
+        completeSession(sessionIdRef.current, duration);
       }
       onComplete?.();
     }
@@ -160,14 +160,14 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">{subject.name}</h2>
           <p className="text-sm text-muted-foreground">
             {studyMode === 'learn' ? 'AI Destekli Öğrenme' : 'Tekrar Modu'}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
           <Button variant="outline" size="sm" onClick={shuffleSlides}>
             <RotateCcw className="h-4 w-4 mr-1" />
             Karıştır
@@ -205,7 +205,7 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
       </Card>
 
       {/* Main Study Card */}
-      <Card className="min-h-[450px]">
+      <Card className="min-h-[420px] md:min-h-[500px]">
         <CardHeader>
           <div className="flex items-center justify-between">
             <Badge variant="outline">
@@ -222,17 +222,17 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="content" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="content" className="gap-1">
+            <TabsList className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
+              <TabsTrigger value="content" className="gap-1 justify-center whitespace-nowrap">
                 <BookOpen className="h-4 w-4" />
                 İçerik
               </TabsTrigger>
-              <TabsTrigger value="ai" className="gap-1">
+              <TabsTrigger value="ai" className="gap-1 justify-center whitespace-nowrap">
                 <Sparkles className="h-4 w-4" />
                 AI Özet
                 {isGeneratingSummary && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
               </TabsTrigger>
-              <TabsTrigger value="notes" className="gap-1">
+              <TabsTrigger value="notes" className="gap-1 justify-center whitespace-nowrap">
                 <MessageSquare className="h-4 w-4" />
                 Notlar
               </TabsTrigger>
@@ -240,7 +240,7 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
 
             {/* Content Tab */}
             <TabsContent value="content" className="mt-4">
-              <ScrollArea className="h-[280px] pr-4">
+              <ScrollArea className="h-[260px] sm:h-[320px] pr-4">
                 <div className="space-y-4">
                   {currentSlide.imageUrl && (
                     <img 
@@ -258,7 +258,7 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
 
             {/* AI Summary Tab */}
             <TabsContent value="ai" className="mt-4">
-              <ScrollArea className="h-[280px] pr-4">
+              <ScrollArea className="h-[260px] sm:h-[320px] pr-4">
                 {!hasApiKey ? (
                   <div className="space-y-4">
                     <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -350,7 +350,7 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
 
             {/* Notes Tab */}
             <TabsContent value="notes" className="mt-4">
-              <ScrollArea className="h-[280px] pr-4">
+              <ScrollArea className="h-[260px] sm:h-[320px] pr-4">
                 <div className="space-y-4">
                   {currentSlide.notes ? (
                     <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -376,7 +376,7 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
       </Card>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button 
           variant="outline" 
           onClick={prevSlide}

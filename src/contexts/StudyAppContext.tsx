@@ -31,7 +31,7 @@ const initialState: StudyAppState = {
 interface StudyAppContextType {
   state: StudyAppState;
   addSubject: (name: string, description?: string, color?: string) => Subject;
-  addSlide: (subjectId: string, slide: Omit<Slide, 'id'>) => Slide;
+  addSlide: (subjectId: string, slide: Omit<Slide, 'id'>) => Promise<Slide>;
   updateSlide: (subjectId: string, slideId: string, updates: Partial<Slide>) => void;
   deleteSlide: (subjectId: string, slideId: string) => void;
   addQuiz: (subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]) => Quiz;
