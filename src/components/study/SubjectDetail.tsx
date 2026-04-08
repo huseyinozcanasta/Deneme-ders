@@ -105,55 +105,57 @@ export function SubjectDetail() {
       </div>
 
       {/* Quick Actions */}
-      <div className="rounded-[2rem] border border-slate-200/80 bg-slate-50 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/80">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Button
-            variant="outline"
-            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
-            onClick={() => setShowSlideUpload(true)}
-          >
-            <Upload className="h-6 w-6" />
-            <span>Slayt Ekle</span>
-          </Button>
+      {view === 'overview' && (
+        <div className="rounded-[2rem] border border-slate-200/80 bg-slate-50 p-3 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/80">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Button
+              variant="outline"
+              className="flex h-full flex-col items-start justify-center gap-2 rounded-[1.75rem] border-slate-300 bg-white/90 p-4 text-left text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+              onClick={() => setShowSlideUpload(true)}
+            >
+              <Upload className="h-5 w-5" />
+              <span className="text-sm font-semibold">Slayt Ekle</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
-            onClick={() => subject.slides.length > 0 ? setView('study') : setShowSlideUpload(true)}
-          >
-            <BookOpen className="h-6 w-6" />
-            <span>Çalış</span>
-          </Button>
+            <Button
+              variant="outline"
+              className="flex h-full flex-col items-start justify-center gap-2 rounded-[1.75rem] border-slate-300 bg-white/90 p-4 text-left text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+              onClick={() => subject.slides.length > 0 ? setView('study') : setShowSlideUpload(true)}
+            >
+              <BookOpen className="h-5 w-5" />
+              <span className="text-sm font-semibold">Çalış</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
-            onClick={() => setView('planner')}
-          >
-            <Calendar className="h-6 w-6" />
-            <span>Planla</span>
-          </Button>
+            <Button
+              variant="outline"
+              className="flex h-full flex-col items-start justify-center gap-2 rounded-[1.75rem] border-slate-300 bg-white/90 p-4 text-left text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+              onClick={() => setView('planner')}
+            >
+              <Calendar className="h-5 w-5" />
+              <span className="text-sm font-semibold">Planla</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            className="h-auto rounded-3xl border-slate-300 bg-white/80 py-5 text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
-            onClick={() => setView('stats')}
-          >
-            <BarChart3 className="h-6 w-6" />
-            <span>İstatistik</span>
-          </Button>
+            <Button
+              variant="outline"
+              className="flex h-full flex-col items-start justify-center gap-2 rounded-[1.75rem] border-slate-300 bg-white/90 p-4 text-left text-slate-950 transition hover:border-slate-400 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-900"
+              onClick={() => setView('stats')}
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span className="text-sm font-semibold">İstatistik</span>
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 rounded-3xl border border-slate-200/80 bg-slate-50 p-1 dark:border-slate-800/70 dark:bg-slate-900/80">
-          <TabsTrigger value="overview" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Genel</TabsTrigger>
-          <TabsTrigger value="study" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Öğren</TabsTrigger>
-          <TabsTrigger value="quiz" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Quiz</TabsTrigger>
-          <TabsTrigger value="planner" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Plan</TabsTrigger>
-          <TabsTrigger value="spaced" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Tekrar</TabsTrigger>
-          <TabsTrigger value="stats" className="rounded-3xl py-3 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">İstatistik</TabsTrigger>
+        <TabsList className="flex w-full gap-2 overflow-x-auto rounded-3xl border border-slate-200/80 bg-slate-50 p-2 dark:border-slate-800/70 dark:bg-slate-900/80">
+          <TabsTrigger value="overview" className="min-w-[110px] rounded-3xl py-3 px-4 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Genel</TabsTrigger>
+          <TabsTrigger value="study" className="min-w-[110px] rounded-3xl py-3 px-4 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Öğren</TabsTrigger>
+          <TabsTrigger value="quiz" className="min-w-[110px] rounded-3xl py-3 px-4 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Quiz</TabsTrigger>
+          <TabsTrigger value="planner" className="min-w-[110px] rounded-3xl py-3 px-4 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Plan</TabsTrigger>
+          <TabsTrigger value="spaced" className="min-w-[110px] rounded-3xl py-3 px-4 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">Tekrar</TabsTrigger>
+          <TabsTrigger value="stats" className="min-w-[110px] rounded-3xl py-3 px-4 text-sm font-semibold text-slate-700 data-[state=active]:bg-slate-950 data-[state=active]:text-white dark:text-slate-400 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-950">İstatistik</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
