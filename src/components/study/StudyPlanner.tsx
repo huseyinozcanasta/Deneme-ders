@@ -152,7 +152,7 @@ export function StudyPlanner({ subject }: StudyPlannerProps) {
           </div>
 
           {/* Days Grid */}
-          <div className={`grid gap-2 ${view === 'week' ? 'grid-cols-7' : 'grid-cols-7'}`}>
+          <div className={`grid gap-2 ${view === 'week' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-7' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-7'}`}>
             {days.map((day) => {
               const plans = getPlansForDay(day);
               const completedCount = plans.filter(p => p.completed).length;

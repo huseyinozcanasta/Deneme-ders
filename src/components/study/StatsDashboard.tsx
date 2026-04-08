@@ -106,7 +106,7 @@ export function StatsDashboard({ subject }: StatsDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Main Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -166,7 +166,7 @@ export function StatsDashboard({ subject }: StatsDashboardProps) {
       </div>
 
       {/* Time Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -210,7 +210,7 @@ export function StatsDashboard({ subject }: StatsDashboardProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="text-center p-4 bg-muted rounded-lg">
               <p className="text-2xl font-bold">{stats.totalCards}</p>
               <p className="text-sm text-muted-foreground">Toplam Kart</p>

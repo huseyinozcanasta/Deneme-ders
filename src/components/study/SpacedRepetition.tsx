@@ -279,7 +279,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Toplam Kart</p>
                 <p className="text-2xl font-bold">{filteredCards.length}</p>
@@ -290,7 +290,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
               </div>
             </div>
 
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-col gap-2 mb-4 sm:flex-row">
               <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
                 <SelectTrigger>
                   <Filter className="h-4 w-4 mr-2" />
@@ -476,7 +476,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
           Cevabı Göster
         </Button>
       ) : (
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {[1, 2, 3, 4, 5].map(quality => (
             <Button
               key={quality}
@@ -491,7 +491,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button 
           variant="ghost" 
           onClick={() => {

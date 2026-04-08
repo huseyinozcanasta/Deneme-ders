@@ -88,7 +88,7 @@ const Index = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center">
                 <Flame className="h-8 w-8 mx-auto mb-2 text-orange-300" />
                 <p className="text-3xl font-bold">{state.stats.streakDays}</p>
@@ -116,7 +116,7 @@ const Index = () => {
 
       {/* Quick Actions */}
       <div className="max-w-6xl mx-auto px-6 py-12 -mt-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action, idx) => (
             <Card 
               key={idx}
