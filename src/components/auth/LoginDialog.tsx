@@ -5,7 +5,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Upload, AlertTriangle, ChevronDown, ChevronUp, Loader2, Copy, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
@@ -16,7 +16,8 @@ import {
   generateNostrConnectURI,
   type NostrConnectParams,
 } from '@/hooks/useLoginActions';
-import { DialogTitle } from '@radix-ui/react-dialog';\nimport { useIsMobile } from '@/hooks/useIsMobile';\nimport { useGoogleAuth, type GoogleUser } from '@/hooks/useGoogleAuth';\nimport { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
   const [connectError, setConnectError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showBunkerInput, setShowBunkerInput] = useState(false);
+  const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState<boolean>(false);
   const [errors, setErrors] = useState<{
     nsec?: string;
     bunker?: string;
@@ -57,7 +59,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
   }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const login = useLoginActions();\n  const { user: googleUser, renderGoogleButton, signOut: googleSignOut } = useGoogleAuth();\n\n  // Check if on mobile device\n  const isMobile = useIsMobile();\n  // Check if extension is available\n  const hasExtension = 'nostr' in window;\n\n  const handleGoogleLogin = () => {\n    // Button already handles callback via renderGoogleButton\n    // Additional logic if needed\n  };
+  const login = useLoginActions();
+  const googleAuth = useGoogleAuth();
+  const isMobile = useIsMobile();
+  const hasExtension = 'nostr' in window;
+
+  const handleGoogleLogin = () => {
+    // Google button handles callback
+  };
 
   // Generate nostrconnect params (sync) - just creates the QR code data
   const generateConnectSession = useCallback(() => {
@@ -94,7 +103,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
     };
 
     startListening();
-  }, [nostrConnectParams, login, onLogin, onClose, isWaitingForConnect]);
+  }, [nostrConnectParams, login, onLogin, onClose]);
 
   // Clean up on close
   useEffect(() => {
@@ -109,6 +118,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
       setIsLoading(false);
       setIsFileLoading(false);
       setShowBunkerInput(false);
+      setIsMoreOptionsOpen(false);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -251,8 +261,6 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
     };
     reader.readAsText(file);
   };
-
-  const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState(false);
 
   const renderTabs = () => (
     <Tabs
@@ -458,7 +466,15 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
         </div>
 
         <div className='px-6 pb-6 space-y-4 overflow-y-auto'>
-          {/* Google Login Button */}\n          <div className="space-y-3">\n            <Button\n              onClick={handleGoogleLogin}\n              className="w-full h-12 flex items-center gap-2"\n              variant="outline"\n            >\n              <div id="google-signin-button"></div>\n              <span>Google ile Giriş Yap</span>\n            </Button>\n          </div>\n\n          {/* Extension Login Button - shown if extension is available */}\n          {hasExtension && (\n            <div className="space-y-3">\n              {errors.extension && (\n
+          {/* Google Login Button */}
+          <div className="space-y-3">
+            <div id="google-signin-button" className="w-full h-12" />
+          </div>
+
+          {/* Extension Login Button - shown if extension is available */}
+          {hasExtension && (
+            <div className="space-y-3">
+              {errors.extension && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>{errors.extension}</AlertDescription>
@@ -477,14 +493,14 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
           {/* Tabs - wrapped in collapsible if extension is available, otherwise shown directly */}
           {hasExtension ? (
             <Collapsible className="space-y-4" open={isMoreOptionsOpen} onOpenChange={setIsMoreOptionsOpen}>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                className="w-full justify-center h-10 px-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent"
                 onClick={() => setIsMoreOptionsOpen(!isMoreOptionsOpen)}
-                className="w-full flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
               >
                 <span>More Options</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${isMoreOptionsOpen ? 'rotate-180' : ''}`} />
-              </button>
+              </Button>
 
               <CollapsibleContent>
                 {renderTabs()}
@@ -496,7 +512,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
         </div>
       </DialogContent>
     </Dialog>
-    );
-  };
+  );
+};
 
 export default LoginDialog;
