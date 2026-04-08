@@ -64,7 +64,6 @@ export function QuizGenerator({ subject, onComplete }: QuizGeneratorProps) {
     }
 
     setGenerationStatus('Quiz oluşturuluyor...');
-    setIsLoading(true);
 
     try {
       const generated = await generateQuizQuestions(
@@ -86,8 +85,6 @@ export function QuizGenerator({ subject, onComplete }: QuizGeneratorProps) {
     } catch (err) {
       console.error('Quiz generation failed:', err);
       setGenerationStatus('Quiz oluşturulamadı. Tekrar deneyin.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -102,7 +99,6 @@ export function QuizGenerator({ subject, onComplete }: QuizGeneratorProps) {
     }
 
     setGenerationStatus('Kartlar oluşturuluyor...');
-    setIsLoading(true);
 
     try {
       const cards = await generateFlashcards(slideContent, subject.name, questionCount * 2);
@@ -115,8 +111,6 @@ export function QuizGenerator({ subject, onComplete }: QuizGeneratorProps) {
     } catch (err) {
       console.error('Flashcard generation failed:', err);
       setGenerationStatus('Kartlar oluşturulamadı. Tekrar deneyin.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
