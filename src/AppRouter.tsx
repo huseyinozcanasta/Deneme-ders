@@ -12,7 +12,7 @@ import { StatsDashboard } from "./components/study/StatsDashboard";
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Deneme-ders"> {/* Buraya basename ekledik */}
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Index />} />
@@ -21,9 +21,7 @@ export function AppRouter() {
         <Route path="/review" element={<SpacedRepetition />} />
         <Route path="/planner" element={<StudyPlanner />} />
         <Route path="/stats" element={<StatsDashboard />} />
-        {/* NIP-19 route for npub1, note1, naddr1, nevent1, nprofile1 */}
         <Route path="/:nip19" element={<NIP19Page />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
