@@ -6,3 +6,4 @@ export { SpacedRepetition } from './SpacedRepetition';
 export { StatsDashboard } from './StatsDashboard';
 export { SubjectList, SubjectCard } from './SubjectList';
 export { SubjectDetail } from './SubjectDetail';
+export { GeminiSettings } from './GeminiSettings';
