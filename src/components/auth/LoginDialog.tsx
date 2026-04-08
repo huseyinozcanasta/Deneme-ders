@@ -68,7 +68,8 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
   const hasExtension = 'nostr' in window;
 
   const handleGoogleLogin = () => {
-    // Google button handles callback
+    // Google GSI handles callback automatically via handleCredentialResponse
+    toast({ title: 'Google login başlatıldı', description: 'Drive erişim izni isteyecek.' });
   };
 
   // Generate nostrconnect params (sync) - just creates the QR code data
