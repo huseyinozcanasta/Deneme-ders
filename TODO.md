@@ -1,11 +1,13 @@
-# Slide Preview Improvement - TODO
+## Slide Preview Task ✅ Completed
 
-## Steps:
-- [x] 1. Create TODO.md (done)
-- [x] 2. Edit src/components/study/SubjectDetail.tsx - Replace slide list text preview with image thumbnail (hide text if imageUrl)
-- [x] 3. Edit src/components/study/StudyMode.tsx - Update preview section to prioritize image, hide text if imageUrl
-- [x] 4. Test changes with `npm run dev`
-- [x] 5. Commit changes to git with meaningful message
-- [x] 6. Update TODO.md with completion
-- [x] 7. Task completed
+Plan: search_files/read_file → plan → user approval → TODO.md → edits → test → git commit/push (blackboxai/slide-preview-fix)
+
+**Results:**
+- SubjectDetail.tsx: Slayt listesi şimdi image thumbnail gösterir, metin gizli (image varsa)
+- StudyMode.tsx: Önizleme büyük thumbnail (h-28 w-48), metin gizli (image varsa)
+
+Dev server: http://localhost:8080/Deneme-ders/
+Git branch/PR hazır.
+
+Task tamamlandı.
 
