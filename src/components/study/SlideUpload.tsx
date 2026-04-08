@@ -13,8 +13,8 @@ import { useToast } from '@/hooks/useToast';
 import type { Slide } from '@/types/study';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Use jsdelivr CDN for worker - more reliable than cloudflare for newer versions
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs`;
+// Use unpkg CDN for worker (allowed by CSP)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs`;
 
 interface SlideUploadProps {
   subjectId: string;
