@@ -5,15 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createHead, UnheadProvider } from '@unhead/react/client';
 import { InferSeoMetaPlugin } from '@unhead/addons';
 import { Suspense } from 'react';
-import NostrProvider from '@/components/NostrProvider';
-import { NostrSync } from '@/components/NostrSync';
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { NostrLoginProvider } from '@nostrify/react/login';
 import { AppProvider } from '@/components/AppProvider';
 import { StudyAppProvider } from '@/contexts/StudyAppContext';
-import { NWCProvider } from '@/contexts/NWCContext';
-import { AppConfig } from '@/contexts/AppContext';
 import AppRouter from './AppRouter';
 import { GoogleProvider } from '@/contexts/GoogleProvider';
 
@@ -33,39 +28,20 @@ const queryClient = new QueryClient({
   },
 });
 
-const defaultConfig: AppConfig = {
-  theme: "light",
-  relayMetadata: {
-    relays: [
-      { url: 'wss://relay.ditto.pub', read: true, write: true },
-      { url: 'wss://relay.primal.net', read: true, write: true },
-      { url: 'wss://relay.damus.io', read: true, write: true },
-    ],
-    updatedAt: 0,
-  },
-};
-
 export function App() {
   return (
     <UnheadProvider head={head}>
-      <AppProvider storageKey="nostr:app-config" defaultConfig={defaultConfig}>
+      <AppProvider storageKey="app-config" defaultConfig={{ theme: "system", relayMetadata: { relays: [], updatedAt: 0 } }}>  
         <GoogleProvider>
           <QueryClientProvider client={queryClient}>
-            <NostrLoginProvider storageKey='nostr:login'>
-              <NostrProvider>
-                <NostrSync />
-                <NWCProvider>
-                  <StudyAppProvider>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Suspense>
-                        <AppRouter />
-                      </Suspense>
-                    </TooltipProvider>
-                  </StudyAppProvider>
-                </NWCProvider>
-              </NostrProvider>
-            </NostrLoginProvider>
+            <StudyAppProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Suspense>
+                  <AppRouter />
+                </Suspense>
+              </TooltipProvider>
+            </StudyAppProvider>
           </QueryClientProvider>
         </GoogleProvider>
       </AppProvider>

@@ -12,10 +12,9 @@ import type {
 } from '@/types/study';
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
-import { useLoggedInAccounts } from '@/hooks/useLoggedInAccounts';
 import type { GoogleUser } from '@/hooks/useGoogleAuth';
-import { loadFromIndexedDB } from '@/lib/indexeddbUtils';
-import type { StudyAppState } from '@/types/study';
+
+import { loadFromIndexedDB, saveToIndexedDB } from '@/lib/indexeddbUtils';
 
 const initialStats: StudyStats = {
   totalStudyTime: 0,
@@ -85,61 +84,77 @@ async function compressImage(dataUrl: string, quality = 0.6): Promise<string> {
 }
 
 export function StudyAppProvider({ children }: { children: ReactNode }) {
-  const { currentUser, googleAccount } = useLoggedInAccounts();
-  const googleUser = (currentUser as any)?.googleUser || googleAccount?.googleUser as GoogleUser | null;
-const drive = useGoogleDrive(googleUser);
-const googleAuth = useGoogleAuth();
+  const googleAuth = useGoogleAuth();
+  const googleUser = googleAuth.user;
+  const drive = useGoogleDrive(googleUser);
   const [state, setState] = useState<StudyAppState>(initialState);
   const [isStorageReady, setIsStorageReady] = useState(false);
   const [driveReady, setDriveReady] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
-  // Load from Drive or IndexedDB fallback
+  // Load from Drive (priority) or IndexedDB fallback
   useEffect(() => {
+    let isCurrent = true;
     const loadData = async () => {
-      if (drive.isLoading || !driveReady || !googleUser || !googleAuth.gapiLoaded) return;
+      if (!googleUser || !googleAuth.gapiLoaded || drive.isLoading) return;
 
       try {
-        if (drive.files.length > 0) {
-          // Load latest Drive file
+        // Wait for Drive files
+        if (drive.files.length === 0) {
+          await new Promise(r => setTimeout(r, 1000)); // Wait for listFiles
+        }
+        
+        if (drive.files.length > 0 && isCurrent) {
           const latestFile = drive.files[0];
+          console.log('Loading from Drive:', latestFile.name);
           const loadedState = await drive.loadState(latestFile.id);
-          setState(loadedState);
-        } else {
-          // Fallback to local
+          if (isCurrent) setState(loadedState);
+        } else if (isCurrent) {
+          console.log('No Drive files, using local');
+          const localState = await loadFromIndexedDB();
+          if (isCurrent) setState(localState);
+        }
+      } catch (error) {
+        console.error('Drive load failed:', error);
+        if (isCurrent) {
           const localState = await loadFromIndexedDB();
           setState(localState);
         }
-        setIsStorageReady(true);
-        setDriveReady(true);
-      } catch (error) {
-        console.error('Drive load failed, using local fallback:', error);
-        const localState = await loadFromIndexedDB();
-        setState(localState);
+      }
+      
+      if (isCurrent) {
         setIsStorageReady(true);
       }
     };
 
     loadData();
-  }, [drive.files.length, drive.isLoading, googleUser, driveReady, drive.gapiLoaded]);
+    return () => { isCurrent = false; };
+  }, [drive.files, googleUser, googleAuth.gapiLoaded, drive.isLoading]);
 
-  // Auto-save to Drive on state change (debounced)
+  // Auto-save to Drive (3s throttle, offline fallback)
   useEffect(() => {
-    if (!isStorageReady || !autoSaveEnabled || !drive.gapiLoaded || drive.isLoading || !googleUser) return;
+    if (!isStorageReady || !googleUser || !googleAuth.gapiLoaded) return;
 
     const timeoutId = setTimeout(async () => {
-      setPendingSave(true);
+      if (!isStorageReady) return;
+      
       try {
+        setPendingSave(true);
+        console.log('Auto-saving to Drive...');
         await drive.saveState(state);
+        console.log('✅ Drive sync success');
       } catch (error) {
-        console.error('Drive save failed:', error);
+        console.error('❌ Drive save failed:', error);
+        // Fallback to IndexedDB
+        await saveToIndexedDB(state);
+      } finally {
+        setPendingSave(false);
       }
-      setPendingSave(false);
-    }, 1000);
+    }, 3000); // 3s throttle
 
     return () => clearTimeout(timeoutId);
-  }, [state]);
+  }, [state, isStorageReady, googleUser, googleAuth.gapiLoaded]);
 
   const addSubject = useCallback((name: string, description?: string, color = '#6366f1'): Subject => {
     const subject: Subject = {
