@@ -13,8 +13,8 @@ import { useToast } from '@/hooks/useToast';
 import type { Slide } from '@/types/study';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set the worker source
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Use jsdelivr CDN for worker - more reliable than cloudflare for newer versions
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs`;
 
 interface SlideUploadProps {
   subjectId: string;
