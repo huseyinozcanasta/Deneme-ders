@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File, AlertCircle, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { useStudyApp } from '@/contexts/StudyAppContext';
 import { useToast } from '@/hooks/useToast';
+import { useUploadFile } from '@/hooks/useUploadFile';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { Slide } from '@/types/study';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -24,6 +26,9 @@ interface SlideUploadProps {
 export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   const { addSlide } = useStudyApp();
   const { toast } = useToast();
+  const { mutateAsync: uploadFile } = useUploadFile();
+  const { user } = useCurrentUser();
+  const [isSaving, setIsSaving] = useState(false);
   const [slides, setSlides] = useState<Omit<Slide, 'id'>[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -33,11 +38,12 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   const [manualContent, setManualContent] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const renderPDFPage = async (pdfDoc: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<string> => {
+  const renderPDFPage = async (pdfDoc: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<{ imageData: string; textContent: string }> => {
     const page = await pdfDoc.getPage(pageNum);
     const scale = 2; // Higher scale for better quality
     const viewport = page.getViewport({ scale });
     
+    // Render page to canvas
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     
@@ -51,7 +57,17 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
       viewport: viewport,
     }).promise;
     
-    return canvas.toDataURL('image/png', 0.9);
+    const imageData = canvas.toDataURL('image/jpeg', 0.85);
+    
+    // Extract text content from the page
+    const textContent = await page.getTextContent();
+    const text = textContent.items
+      .map((item: any) => item.str)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    return { imageData, textContent: text };
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +117,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
           
           const loadingTask = pdfjsLib.getDocument({ 
             data: arrayBuffer,
-            cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
+            cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/`,
             cMapPacked: true,
           });
           
@@ -121,12 +137,12 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
             setProcessingProgress(((processedFiles + (pageNum / numPages)) / totalFiles) * 100);
             
             try {
-              const imageData = await renderPDFPage(pdfDoc, pageNum);
+              const { imageData, textContent } = await renderPDFPage(pdfDoc, pageNum);
               
               const newSlide: Omit<Slide, 'id'> = {
                 title: numPages > 1 ? `${fileName} - Sayfa ${pageNum}` : fileName,
-                content: '',
-                imageUrl: imageData,
+                content: textContent || '', // Store extracted text for AI
+                imageUrl: imageData, // Local preview image
               };
               setSlides(prev => [...prev, newSlide]);
             } catch (pageError) {
@@ -217,11 +233,62 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   };
 
   const handleSaveSlides = async () => {
-    for (const slide of slides) {
-      await addSlide(subjectId, slide);
+    const totalSlides = slides.length;
+    setIsSaving(true);
+    
+    try {
+      for (let i = 0; i < slides.length; i++) {
+        const slide = slides[i];
+        
+        // Upload image to Blossom if exists and user is logged in
+        let imageUrl = slide.imageUrl;
+        
+        if (imageUrl && imageUrl.startsWith('data:image') && user) {
+          setProcessingStatus(`Görsel yükleniyor ${i + 1}/${totalSlides}...`);
+          
+          try {
+            // Convert data URL to Blob
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const fileName = `${slide.title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.jpg`;
+            const imageFile = new File([blob], fileName, { type: 'image/jpeg' });
+            
+            // Upload to Blossom
+            const [[_, url]] = await uploadFile(imageFile);
+            imageUrl = url; // Use the Blossom URL instead of local data URL
+          } catch (uploadError) {
+            console.error('Failed to upload image:', uploadError);
+            toast({
+              title: "Görsel yükleme hatası",
+              description: `${slide.title} görseli yüklenemedi, metin olarak kaydedilecek.`,
+              variant: "destructive",
+            });
+            imageUrl = ''; // Fallback to text-only
+          }
+        } else if (imageUrl && imageUrl.startsWith('data:image') && !user) {
+          // User not logged in, cannot upload to Blossom
+          toast({
+            title: "Giriş gerekli",
+            description: "Görselleri yüklemek için giriş yapmalısınız. Şimdilik metin olarak kaydedilecek.",
+            variant: "destructive",
+          });
+          imageUrl = '';
+        }
+        
+        await addSlide(subjectId, { ...slide, imageUrl });
+      }
+      
+      setSlides([]);
+      setProcessingStatus('');
+      onComplete?.();
+      
+      toast({
+        title: "Başarılı",
+        description: `${totalSlides} slayt kaydedildi!`,
+      });
+    } finally {
+      setIsSaving(false);
     }
-    setSlides([]);
-    onComplete?.();
   };
 
   const removeSlide = (index: number) => {
@@ -450,9 +517,18 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
                     </div>
                   </ScrollArea>
 
-                  <Button onClick={handleSaveSlides} className="w-full" disabled={slides.length === 0}>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Tüm Slaytları Kaydet ({slides.length})
+                  <Button onClick={handleSaveSlides} className="w-full" disabled={slides.length === 0 || isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Görsel Yükleniyor...
+                      </>
+                    ) : (
+                      <>
+                        <CloudUpload className="h-4 w-4 mr-2" />
+                        Tüm Slaytları Kaydet ({slides.length})
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
