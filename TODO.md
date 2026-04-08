@@ -1,13 +1,29 @@
-## Slide Preview Task ✅ Completed
+# Google Login + Drive Save Implementation
+Current: ✅ Phase 0 Complete
 
-Plan: search_files/read_file → plan → user approval → TODO.md → edits → test → git commit/push (blackboxai/slide-preview-fix)
+## 📋 Implementation Phases
 
-**Results:**
-- SubjectDetail.tsx: Slayt listesi şimdi image thumbnail gösterir, metin gizli (image varsa)
-- StudyMode.tsx: Önizleme büyük thumbnail (h-28 w-48), metin gizli (image varsa)
+### **✅ Phase 0: Planning Complete**
+- [x] Analyzed auth (Nostr-only), study storage (IndexedDB)
+- [x] Confirmed Drive API Client ID provided
+- [x] User approved full integration
 
-Dev server: http://localhost:8080/Deneme-ders/
-Git branch/PR hazır.
+- [x] Created `src/lib/driveUtils.ts`
 
-Task tamamlandı.
+### **🔄 Phase 2: Google Auth Integration** (Current)
+- [ ] Update `LoginDialog.tsx` → Google SignIn button
+- [ ] Update `AccountSwitcher.tsx` → Show Google accounts
+- [ ] Extend `useLoggedInAccounts` → Handle Google users
+
+### **Phase 3: Drive Export**
+- [ ] Create `DriveExportDialog.tsx`
+- [ ] Add export buttons to `SubjectDetail.tsx`/`StudyMode.tsx`
+- [ ] Export StudyAppState as JSON to user's Drive
+
+### **Phase 4: Polish & Test**
+- [ ] Multi-auth support (Nostr + Google)
+- [ ] Error handling, loading states
+- [ ] Test login/export flow
+
+### **✅ Phase 1 Complete!** 🎉\n\n**Next:** Phase 2 - Google Auth UI Integration
 

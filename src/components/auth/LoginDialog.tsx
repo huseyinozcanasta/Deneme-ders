@@ -16,8 +16,7 @@ import {
   generateNostrConnectURI,
   type NostrConnectParams,
 } from '@/hooks/useLoginActions';
-import { DialogTitle } from '@radix-ui/react-dialog';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { DialogTitle } from '@radix-ui/react-dialog';\nimport { useIsMobile } from '@/hooks/useIsMobile';\nimport { useGoogleAuth, type GoogleUser } from '@/hooks/useGoogleAuth';\nimport { Button } from '@/components/ui/button';
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -58,12 +57,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
   }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const login = useLoginActions();
-
-  // Check if on mobile device
-  const isMobile = useIsMobile();
-  // Check if extension is available
-  const hasExtension = 'nostr' in window;
+  const login = useLoginActions();\n  const { user: googleUser, renderGoogleButton, signOut: googleSignOut } = useGoogleAuth();\n\n  // Check if on mobile device\n  const isMobile = useIsMobile();\n  // Check if extension is available\n  const hasExtension = 'nostr' in window;\n\n  const handleGoogleLogin = () => {\n    // Button already handles callback via renderGoogleButton\n    // Additional logic if needed\n  };
 
   // Generate nostrconnect params (sync) - just creates the QR code data
   const generateConnectSession = useCallback(() => {
@@ -464,10 +458,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onLogin }) =
         </div>
 
         <div className='px-6 pb-6 space-y-4 overflow-y-auto'>
-          {/* Extension Login Button - shown if extension is available */}
-          {hasExtension && (
-            <div className="space-y-3">
-              {errors.extension && (
+          {/* Google Login Button */}\n          <div className="space-y-3">\n            <Button\n              onClick={handleGoogleLogin}\n              className="w-full h-12 flex items-center gap-2"\n              variant="outline"\n            >\n              <div id="google-signin-button"></div>\n              <span>Google ile Giriş Yap</span>\n            </Button>\n          </div>\n\n          {/* Extension Login Button - shown if extension is available */}\n          {hasExtension && (\n            <div className="space-y-3">\n              {errors.extension && (\n
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>{errors.extension}</AlertDescription>
