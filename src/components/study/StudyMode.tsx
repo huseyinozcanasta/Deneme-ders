@@ -226,6 +226,35 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
             )}
           </div>
         </CardHeader>
+
+        <div className="mx-4 mb-4 rounded-3xl border border-slate-200/70 bg-slate-100/80 p-4 dark:border-slate-800/70 dark:bg-slate-950/80">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400 mb-1">Slayt Önizlemesi</p>
+              <p className="text-sm font-semibold text-slate-950 dark:text-slate-100 line-clamp-2">
+                {currentSlide.title}
+              </p>
+            </div>
+            {currentSlide.imageUrl && (
+              <span className="rounded-full bg-slate-200 px-2 py-1 text-[11px] text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                Resim var
+              </span>
+            )}
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            {currentSlide.imageUrl ? (
+              <img
+                src={currentSlide.imageUrl}
+                alt={currentSlide.title}
+                className="h-20 w-20 flex-none rounded-3xl object-cover"
+              />
+            ) : null}
+            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 line-clamp-3">
+              {currentSlide.content?.trim().slice(0, 140) || 'Bu slayt için bir önizleme mevcut değil.'}
+            </p>
+          </div>
+        </div>
+
         <CardContent className="pb-3">
           <Tabs defaultValue="content" className="w-full">
             <TabsList className="flex w-full gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
