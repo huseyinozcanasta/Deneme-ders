@@ -1,8 +1,9 @@
 const CACHE_NAME = 'studyflow-v1';
+// Yolların başına nokta ekledik veya tam alt klasör yolunu yazdık
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest'
+  './',
+  './index.html',
+  './manifest.webmanifest'
 ];
 
 // Install event - cache static assets
@@ -29,9 +30,8 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
@@ -39,24 +39,10 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached response and update cache in background
-        event.waitUntil(
-          fetch(event.request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse.clone());
-              });
-            }
-          }).catch(() => {
-            // Network failed, but we have cached response
-          })
-        );
         return cachedResponse;
       }
 
-      // No cache, try network
       return fetch(event.request).then((networkResponse) => {
-        // Cache successful responses
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -65,11 +51,10 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Network failed and no cache - return offline page for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          // GitHub Pages alt klasör yapısına göre fallback
+          return caches.match('./index.html');
         }
-        return new Response('Offline', { status: 503 });
       });
     })
   );
