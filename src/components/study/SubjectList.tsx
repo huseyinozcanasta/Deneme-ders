@@ -48,24 +48,19 @@ export function SubjectCard({ subject }: SubjectCardProps) {
   };
 
   return (
-    <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
-      {/* Color Strip */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-2"
-        style={{ backgroundColor: subject.color }}
-      />
-
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
+    <Card className="group overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white p-0 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:border-slate-800/80 dark:bg-slate-950/80">
+      <div className="h-2 bg-gradient-to-r from-slate-900 to-slate-600 dark:from-slate-200 dark:to-slate-400" />
+      <CardHeader className="pb-0 pt-5 px-6">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
-            <CardTitle className="text-xl">{subject.name}</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-slate-950 dark:text-white">{subject.name}</CardTitle>
             {subject.description && (
-              <CardDescription className="mt-1">{subject.description}</CardDescription>
+              <CardDescription className="mt-2 text-slate-600 dark:text-slate-400">{subject.description}</CardDescription>
             )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -83,24 +78,24 @@ export function SubjectCard({ subject }: SubjectCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent>
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Badge variant="outline" className="gap-1">
-            <BookOpen className="h-3 w-3" />
-            {stats.slides} slayt
-          </Badge>
-          <Badge variant="outline" className="gap-1">
-            <Brain className="h-3 w-3" />
-            {stats.quizzes} quiz
-          </Badge>
-          <Badge variant="outline" className="gap-1">
-            <Target className="h-3 w-3" />
-            {stats.cards} kart
-          </Badge>
+      <CardContent className="px-6 pb-6 pt-4">
+        <div className="grid gap-3 sm:grid-cols-3 mb-6">
+          <div className="rounded-3xl bg-slate-100/80 p-4 text-center dark:bg-slate-900/80">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Slayt</p>
+            <p className="mt-2 text-xl font-semibold text-slate-950 dark:text-white">{stats.slides}</p>
+          </div>
+          <div className="rounded-3xl bg-slate-100/80 p-4 text-center dark:bg-slate-900/80">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Quiz</p>
+            <p className="mt-2 text-xl font-semibold text-slate-950 dark:text-white">{stats.quizzes}</p>
+          </div>
+          <div className="rounded-3xl bg-slate-100/80 p-4 text-center dark:bg-slate-900/80">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Kart</p>
+            <p className="mt-2 text-xl font-semibold text-slate-950 dark:text-white">{stats.cards}</p>
+          </div>
         </div>
 
-        <Button 
-          className="w-full" 
+        <Button
+          className="w-full"
           onClick={() => navigate(`/subject/${subject.id}`)}
         >
           Konuyu Aç
@@ -127,97 +122,100 @@ export function SubjectList() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 items-start justify-between md:flex-row md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Konularım</h1>
-          <p className="text-muted-foreground mt-1">
-            {state.subjects.length} konu
-          </p>
-        </div>
+    <div className="space-y-10">
+      <div className="rounded-[2rem] border border-slate-200/80 bg-white p-8 shadow-sm dark:border-slate-800/80 dark:bg-slate-950/80">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Konular</p>
+            <h1 className="mt-3 text-4xl font-semibold text-slate-950 dark:text-white">Çalışma listenizi zarifçe yönetin</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
+              Her konu için hızlıca not ekleyin, slaytlarınızı kontrol edin ve çalışma akışınızı düzenleyin. Arayüz tamamen sade ve modern şekilde tasarlandı.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <ThemeToggle />
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Yeni Konu
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Konu Ekle</DialogTitle>
+                  <DialogDescription>
+                    Çalışmak istediğiniz yeni konuyu hızlıca tanımlayın.
+                  </DialogDescription>
+                </DialogHeader>
 
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Yeni Konu
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Yeni Konu Ekle</DialogTitle>
-              <DialogDescription>
-                Çalışmak istediğiniz konuyu oluşturun
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Konu Adı</Label>
-                <Input
-                  placeholder="Örn: Matematik, Tarih, Fizik"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Açıklama (İsteğe bağlı)</Label>
-                <Input
-                  placeholder="Konu hakkında kısa bir açıklama"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Renk</Label>
-                <div className="flex flex-wrap gap-2">
-                  {COLORS.map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`h-8 w-8 rounded-full transition-transform ${
-                        selectedColor === color ? 'scale-110 ring-2 ring-offset-2 ring-black' : ''
-                      }`}
-                      style={{ backgroundColor: color }}
+                <div className="space-y-5 py-4">
+                  <div className="space-y-2">
+                    <Label>Konu Adı</Label>
+                    <Input
+                      placeholder="Örn: Matematik, Tarih, Fizik"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                     />
-                  ))}
-                </div>
-              </div>
-            </div>
+                  </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                İptal
-              </Button>
-              <Button onClick={handleCreate} disabled={!name.trim()}>
-                Oluştur
-              </Button>
-            </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  <div className="space-y-2">
+                    <Label>Açıklama (İsteğe bağlı)</Label>
+                    <Input
+                      placeholder="Konu hakkında kısa bir açıklama"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Renk</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {COLORS.map(color => (
+                        <button
+                          key={color}
+                          onClick={() => setSelectedColor(color)}
+                          className={`h-10 w-10 rounded-full border-2 transition-transform duration-200 ${
+                            selectedColor === color ? 'scale-110 border-slate-900 dark:border-white' : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          aria-label={`Renk ${color}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsOpen(false)}>
+                    İptal
+                  </Button>
+                  <Button onClick={handleCreate} disabled={!name.trim()}>
+                    Oluştur
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
       {state.subjects.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-lg font-medium">Henüz konu yok</h3>
-            <p className="text-muted-foreground mt-2 mb-4">
-              Çalışmaya başlamak için yeni bir konu oluşturun
+        <Card className="rounded-[2rem] border border-dashed border-slate-300/70 bg-slate-50 p-12 text-center dark:border-slate-700/80 dark:bg-slate-900/70">
+          <CardContent>
+            <BookOpen className="h-14 w-14 mx-auto mb-5 text-slate-400 dark:text-slate-500" />
+            <h3 className="text-2xl font-semibold text-slate-950 dark:text-white">Henüz konu eklemediniz</h3>
+            <p className="mt-3 text-slate-600 dark:text-slate-400">
+              İlk konunuzu oluşturarak çalışma listenizi hemen başlatabilirsiniz.
             </p>
-            <Button onClick={() => setIsOpen(true)}>
+            <Button className="mt-8" onClick={() => setIsOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               İlk Konunu Oluştur
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {state.subjects.map(subject => (
             <SubjectCard key={subject.id} subject={subject} />
           ))}
