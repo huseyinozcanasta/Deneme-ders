@@ -10,7 +10,9 @@ import {
   Sparkles,
   Loader2,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  Save,
+  X as XIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +20,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { useStudyApp } from '@/contexts/StudyAppContext';
 import { useGemini } from '@/hooks/useGemini';
 import { GeminiSettings } from './GeminiSettings';
@@ -35,7 +38,7 @@ interface AISummary {
 }
 
 export function StudyMode({ subject, onComplete }: StudyModeProps) {
-  const { addStudySession, completeSession } = useStudyApp();
+  const { addStudySession, completeSession, updateSlide } = useStudyApp();
   const { summarizeContent, isLoading, error, hasApiKey } = useGemini();
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -44,6 +47,9 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
   const [studiedSlides, setStudiedSlides] = useState<Set<number>>(new Set());
   const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
   const startTimeRef = useRef<number>(Date.now());
 
@@ -65,6 +71,12 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
       generateSummary();
     }
   }, [currentIndex, hasApiKey]);
+
+  // Update note content when slide changes
+  useEffect(() => {
+    setNoteContent(currentSlide?.notes || '');
+    setEditingNote(false);
+  }, [currentIndex]);
 
   const currentSlide = subject.slides[currentIndex];
   const progress = (studiedSlides.size / subject.slides.length) * 100;
@@ -115,6 +127,22 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
 
   const markAsStudied = () => {
     setStudiedSlides(prev => new Set(prev).add(currentIndex));
+  };
+
+  const saveNote = async () => {
+    if (!currentSlide) return;
+    
+    setIsSavingNote(true);
+    try {
+      await updateSlide(subject.id, currentSlide.id, {
+        notes: noteContent || undefined
+      });
+      setEditingNote(false);
+    } catch (err) {
+      console.error('Failed to save note:', err);
+    } finally {
+      setIsSavingNote(false);
+    }
   };
 
   const nextSlide = () => {
@@ -330,21 +358,72 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
             <TabsContent value="notes" className="mt-2">
               <ScrollArea className="h-[180px] sm:h-[300px] pr-4">
                 <div className="space-y-4">
-                  {currentSlide.notes ? (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="h-4 w-4 text-blue-600" />
-                        <p className="font-medium text-blue-800 dark:text-blue-200">Notlar</p>
+                  {editingNote ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={noteContent}
+                        onChange={(e) => setNoteContent(e.target.value)}
+                        placeholder="Bu slayt için notlarınızı yazın..."
+                        className="min-h-[120px] resize-none text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={saveNote}
+                          disabled={isSavingNote}
+                          className="flex-1"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {isSavingNote ? 'Kaydediliyor...' : 'Kaydet'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingNote(false);
+                            setNoteContent(currentSlide?.notes || '');
+                          }}
+                          disabled={isSavingNote}
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-blue-900 dark:text-blue-100">
-                        {currentSlide.notes}
-                      </p>
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Bu slayt için not eklenmemiş.</p>
-                    </div>
+                    <>
+                      {currentSlide?.notes ? (
+                        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4 text-blue-600" />
+                              <p className="font-medium text-blue-800 dark:text-blue-200">Notlar</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingNote(true)}
+                            >
+                              Düzenle
+                            </Button>
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-blue-900 dark:text-blue-100">
+                            {currentSlide.notes}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p className="mb-4">Bu slayt için not eklenmemiş.</p>
+                          <Button
+                            size="sm"
+                            onClick={() => setEditingNote(true)}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Not Ekle
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </ScrollArea>
