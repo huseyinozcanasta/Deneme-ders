@@ -1,15 +1,19 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2 } from 'lucide-react';
+import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { useStudyApp } from '@/contexts/StudyAppContext';
-import type { Slide, Subject } from '@/types/study';
+import type { Slide } from '@/types/study';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set the worker source
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface SlideUploadProps {
   subjectId: string;
@@ -21,30 +25,108 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   const [slides, setSlides] = useState<Omit<Slide, 'id'>[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState('');
   const [manualTitle, setManualTitle] = useState('');
   const [manualContent, setManualContent] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const renderPDFPage = async (pdfDoc: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<string> => {
+    const page = await pdfDoc.getPage(pageNum);
+    const scale = 2; // Higher scale for better quality
+    const viewport = page.getViewport({ scale });
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    if (!context) throw new Error('Could not get canvas context');
+    
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    
+    await page.render({
+      canvasContext: context,
+      viewport: viewport,
+    }).promise;
+    
+    return canvas.toDataURL('image/png', 0.9);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setIsProcessing(true);
+    setProcessingProgress(0);
+    setProcessingStatus('Dosyalar işleniyor...');
+
+    const totalFiles = files.length;
+    let processedFiles = 0;
 
     for (const file of Array.from(files)) {
       const fileName = file.name.replace(/\.(pptx|ppt|pdf|md|txt)$/i, '');
       
-      if (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg' || file.type === 'image/webp') {
+      if (file.type === 'image/png' || 
+          file.type === 'image/jpeg' || 
+          file.type === 'image/jpg' || 
+          file.type === 'image/webp') {
+        
         const reader = new FileReader();
-        reader.onload = (event) => {
+        await new Promise<void>((resolve) => {
+          reader.onload = (event) => {
+            const newSlide: Omit<Slide, 'id'> = {
+              title: fileName || `Slayt ${slides.length + 1}`,
+              content: '',
+              imageUrl: event.target?.result as string,
+            };
+            setSlides(prev => [...prev, newSlide]);
+            resolve();
+          };
+          reader.readAsDataURL(file);
+        });
+        
+      } else if (file.name.endsWith('.pdf')) {
+        // Handle PDF files
+        setProcessingStatus(`${file.name} işleniyor...`);
+        
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const numPages = pdfDoc.numPages;
+          
+          for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            setProcessingStatus(`${file.name} - Sayfa ${pageNum}/${numPages}`);
+            setProcessingProgress(((processedFiles + (pageNum / numPages)) / totalFiles) * 100);
+            
+            try {
+              const imageData = await renderPDFPage(pdfDoc, pageNum);
+              
+              const newSlide: Omit<Slide, 'id'> = {
+                title: numPages > 1 ? `${fileName} - Sayfa ${pageNum}` : fileName,
+                content: '',
+                imageUrl: imageData,
+              };
+              setSlides(prev => [...prev, newSlide]);
+            } catch (pageError) {
+              console.error(`Error rendering page ${pageNum}:`, pageError);
+              // Create a text slide for failed pages
+              const newSlide: Omit<Slide, 'id'> = {
+                title: `${fileName} - Sayfa ${pageNum}`,
+                content: 'Bu sayfa yüklenemedi.',
+              };
+              setSlides(prev => [...prev, newSlide]);
+            }
+          }
+        } catch (pdfError) {
+          console.error('Error loading PDF:', pdfError);
+          // Create error slide
           const newSlide: Omit<Slide, 'id'> = {
-            title: fileName || `Slayt ${slides.length + 1}`,
-            content: '',
-            imageUrl: event.target?.result as string,
+            title: fileName,
+            content: `PDF yüklenemedi: ${file.name}`,
           };
           setSlides(prev => [...prev, newSlide]);
-        };
-        reader.readAsDataURL(file);
+        }
+        
       } else if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
         const text = await file.text();
         const lines = text.split('\n\n').filter(l => l.trim());
@@ -63,9 +145,19 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
         };
         setSlides(prev => [...prev, newSlide]);
       }
+      
+      processedFiles++;
+      setProcessingProgress((processedFiles / totalFiles) * 100);
     }
 
     setIsProcessing(false);
+    setProcessingProgress(100);
+    setProcessingStatus('Tamamlandı!');
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleAddManualSlide = () => {
@@ -104,7 +196,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
             Slayt Ekle
           </CardTitle>
           <CardDescription>
-            Slayt dosyalarını yükleyin veya manuel olarak içerik ekleyin
+            PDF, resim veya metin dosyalarını yükleyin
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,43 +208,84 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
             </TabsList>
 
             <TabsContent value="upload" className="space-y-4 mt-4">
-              <div 
-                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept=".png,.jpg,.jpeg,.webp,.txt,.md,.pptx"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <div className="flex flex-col items-center gap-4">
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    {isProcessing ? (
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    ) : (
-                      <Upload className="h-8 w-8 text-primary" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium">Slayt dosyalarınızı sürükleyin veya tıklayın</p>
-                    <p className="text-sm text-muted-foreground">PNG, JPG, TXT, MD desteklenir</p>
+              {isProcessing ? (
+                <div className="space-y-4 p-8 border rounded-lg">
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <div className="text-center">
+                      <p className="font-medium">{processingStatus}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Lütfen bekleyin...
+                      </p>
+                    </div>
+                    <Progress value={processingProgress} className="w-full max-w-md" />
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div 
+                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept=".png,.jpg,.jpeg,.webp,.txt,.md,.pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Upload className="h-8 w-8 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Slayt dosyalarınızı sürükleyin veya tıklayın</p>
+                        <p className="text-sm text-muted-foreground">PDF, PNG, JPG, TXT, MD desteklenir</p>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Image className="h-4 w-4" />
-                  <span>Görüntü slaytları</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
-                  <span>Metin dosyaları</span>
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 p-3 border rounded-lg">
+                      <div className="h-8 w-8 rounded bg-red-100 dark:bg-red-950/30 flex items-center justify-center">
+                        <File className="h-4 w-4 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">PDF</p>
+                        <p className="text-xs">Tüm sayfalar</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 border rounded-lg">
+                      <div className="h-8 w-8 rounded bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
+                        <Image className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Resimler</p>
+                        <p className="text-xs">PNG, JPG, WEBP</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 border rounded-lg">
+                      <div className="h-8 w-8 rounded bg-green-100 dark:bg-green-950/30 flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Metin</p>
+                        <p className="text-xs">TXT, MD</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 border rounded-lg">
+                      <div className="h-8 w-8 rounded bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center">
+                        <Plus className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Manuel</p>
+                        <p className="text-xs">Kendi içeriğin</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-4 mt-4">
@@ -196,29 +329,31 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
                     <span className="text-sm text-muted-foreground">
                       Slayt {currentSlideIndex + 1} / {slides.length}
                     </span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setCurrentSlideIndex(prev => Math.max(0, prev - 1))}
-                      disabled={currentSlideIndex === 0}
-                    >
-                      Önceki
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setCurrentSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
-                      disabled={currentSlideIndex === slides.length - 1}
-                    >
-                      Sonraki
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setCurrentSlideIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentSlideIndex === 0}
+                      >
+                        Önceki
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setCurrentSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
+                        disabled={currentSlideIndex === slides.length - 1}
+                      >
+                        Sonraki
+                      </Button>
+                    </div>
                   </div>
 
                   <Card className="relative">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2 h-8 w-8"
+                      className="absolute top-2 right-2 h-8 w-8 z-10 bg-background/80"
                       onClick={() => removeSlide(currentSlideIndex)}
                     >
                       <X className="h-4 w-4" />
@@ -228,32 +363,36 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
                     </CardHeader>
                     <CardContent>
                       {slides[currentSlideIndex]?.imageUrl ? (
-                        <img 
-                          src={slides[currentSlideIndex].imageUrl} 
-                          alt={slides[currentSlideIndex].title}
-                          className="max-h-64 rounded-lg object-contain"
-                        />
+                        <div className="flex justify-center">
+                          <img 
+                            src={slides[currentSlideIndex].imageUrl} 
+                            alt={slides[currentSlideIndex].title}
+                            className="max-h-[400px] rounded-lg object-contain"
+                          />
+                        </div>
                       ) : (
                         <p className="whitespace-pre-wrap">{slides[currentSlideIndex]?.content}</p>
                       )}
                     </CardContent>
                   </Card>
 
-                  <div className="flex gap-2 overflow-x-auto pb-2">
-                    {slides.map((slide, idx) => (
-                      <Button
-                        key={idx}
-                        variant={idx === currentSlideIndex ? 'default' : 'outline'}
-                        size="sm"
-                        className="shrink-0"
-                        onClick={() => setCurrentSlideIndex(idx)}
-                      >
-                        {idx + 1}
-                      </Button>
-                    ))}
-                  </div>
+                  <ScrollArea className="w-full">
+                    <div className="flex gap-2 pb-2">
+                      {slides.map((slide, idx) => (
+                        <Button
+                          key={idx}
+                          variant={idx === currentSlideIndex ? 'default' : 'outline'}
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => setCurrentSlideIndex(idx)}
+                        >
+                          {idx + 1}
+                        </Button>
+                      ))}
+                    </div>
+                  </ScrollArea>
 
-                  <Button onClick={handleSaveSlides} className="w-full">
+                  <Button onClick={handleSaveSlides} className="w-full" disabled={slides.length === 0}>
                     <ArrowRight className="h-4 w-4 mr-2" />
                     Tüm Slaytları Kaydet ({slides.length})
                   </Button>
