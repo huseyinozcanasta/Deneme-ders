@@ -31,7 +31,8 @@ createRoot(document.getElementById("root")!).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
+    // Buradaki yolu tam olarak '/Deneme-ders/sw.js' yaptık
+    navigator.serviceWorker.register('/Deneme-ders/sw.js')
       .then(reg => console.log('Servis İşçisi Kaydedildi!', reg))
       .catch(err => console.log('Hata:', err));
   });
