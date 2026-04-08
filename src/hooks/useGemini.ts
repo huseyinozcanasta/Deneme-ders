@@ -46,7 +46,7 @@ export function useGemini(options: UseGeminiOptions = {}) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-flash-latest',
         safetySettings: [
           {
             category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -156,7 +156,7 @@ Kurallar:
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-flash-latest',
       });
 
       const prompt = `
@@ -224,7 +224,7 @@ Kurallar:
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-flash-latest',
       });
 
       const prompt = `
