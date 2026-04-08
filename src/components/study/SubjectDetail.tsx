@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useStudyApp } from '@/contexts/StudyAppContext';
 import { StudyMode } from './StudyMode';
 import { QuizGenerator, QuizPlayer } from './Quiz';
@@ -100,6 +101,7 @@ export function SubjectDetail() {
             )}
           </div>
         </div>
+        <ThemeToggle />
       </div>
 
       {/* Quick Actions */}

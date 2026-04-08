@@ -2,6 +2,7 @@ import { useSeoMeta } from '@unhead/react';
 import { BookOpen, Flame, Target, Brain, Calendar, BarChart3, Zap, ChevronRight, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useStudyApp } from '@/contexts/StudyAppContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -64,6 +65,11 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHptMCAzMmMtNy43MzggMC0xNC02LjI2Mi0xNC0xNHM2LjI2Mi0xNCAxNC0xNCAxNCA2LjI2MiAxNCAxNC02LjI2MiAxNC0xNCAxNHoiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==')] opacity-30" />
+        
+        {/* Theme Toggle */}
+        <div className="absolute top-4 right-4 z-20">
+          <ThemeToggle />
+        </div>
         
         <div className="relative max-w-6xl mx-auto px-6 py-16 md:py-24">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
