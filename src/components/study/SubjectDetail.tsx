@@ -196,12 +196,19 @@ export function SubjectDetail() {
                               <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{idx + 1}</span>
                               <span className="font-medium text-slate-900 dark:text-slate-100 line-clamp-1">{slide.title}</span>
                             </div>
-                            {(slide.imageUrl || slide.content) && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">
-                                {slide.imageUrl && '📷 '}
-                                {slide.content?.substring(0, 60) || 'Görüntü mevcuttur'}
-                              </p>
-                            )}
+{slide.imageUrl ? (
+  <div className="mt-2">
+    <img
+      src={slide.imageUrl}
+      alt={slide.title}
+      className="h-12 w-16 object-cover rounded"
+    />
+  </div>
+) : (
+  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2">
+    {slide.content?.substring(0, 60) || 'İçerik mevcut'}
+  </p>
+)}
                           </button>
                         ))}
                       </div>

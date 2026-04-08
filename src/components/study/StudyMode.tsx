@@ -241,18 +241,22 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
               </span>
             )}
           </div>
-          <div className="mt-3 flex items-center gap-3">
-            {currentSlide.imageUrl ? (
-              <img
-                src={currentSlide.imageUrl}
-                alt={currentSlide.title}
-                className="h-20 w-20 flex-none rounded-3xl object-cover"
-              />
-            ) : null}
-            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 line-clamp-3">
-              {currentSlide.content?.trim().slice(0, 140) || 'Bu slayt için bir önizleme mevcut değil.'}
-            </p>
-          </div>
+{currentSlide.imageUrl ? (
+  <div className="flex flex-col items-center gap-2 mt-3">
+    <img
+      src={currentSlide.imageUrl}
+      alt={currentSlide.title}
+      className="h-28 w-48 flex-none rounded-2xl object-cover shadow-lg"
+    />
+    <p className="text-xs text-slate-500 dark:text-slate-400 text-center px-4">
+      📷 Slayt önizlemesi
+    </p>
+  </div>
+) : (
+  <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 line-clamp-3 mt-3">
+    {currentSlide.content?.trim().slice(0, 140) || 'Bu slayt için bir önizleme mevcut değil.'}
+  </p>
+)}
         </div>
 
         <CardContent className="pb-3">
