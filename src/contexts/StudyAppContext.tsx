@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { 
   StudyAppState, 
   Subject, 
@@ -43,34 +43,138 @@ interface StudyAppContextType {
   reviewSpacedCard: (cardId: string, quality: number) => void;
   deleteSubject: (subjectId: string) => void;
   deleteQuiz: (quizId: string) => void;
+  isStorageReady: boolean;
 }
 
 const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'study:app-data';
+const DB_NAME = 'study-app-db';
+const DB_VERSION = 1;
+const STORE_NAME = 'app-state';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 }
 
-export function StudyAppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<StudyAppState>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return initialState;
+// IndexedDB helpers
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
       }
-    }
-    return initialState;
+    };
   });
+}
 
+async function saveToIndexedDB(state: StudyAppState): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.put(JSON.stringify(state), 'state');
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+    
+    transaction.oncomplete = () => db.close();
+  });
+}
+
+async function loadFromIndexedDB(): Promise<StudyAppState> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get('state');
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      if (request.result) {
+        try {
+          resolve(JSON.parse(request.result));
+        } catch {
+          resolve(initialState);
+        }
+      } else {
+        resolve(initialState);
+      }
+    };
+    
+    transaction.oncomplete = () => db.close();
+  });
+}
+
+// Compress image data URL for storage efficiency
+async function compressImage(dataUrl: string, quality = 0.6): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxWidth = 1200; // Max width for storage
+      const scale = Math.min(1, maxWidth / img.width);
+      
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+export function StudyAppProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<StudyAppState>(initialState);
+  const [isStorageReady, setIsStorageReady] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
+
+  // Load from IndexedDB on mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    loadFromIndexedDB()
+      .then((savedState) => {
+        setState(savedState);
+        setIsStorageReady(true);
+      })
+      .catch((error) => {
+        console.error('Failed to load from IndexedDB:', error);
+        setIsStorageReady(true);
+      });
+  }, []);
 
-  const addSubject = (name: string, description?: string, color = '#6366f1'): Subject => {
+  // Debounced save to IndexedDB
+  useEffect(() => {
+    if (!isStorageReady) return;
+    
+    setPendingSave(true);
+    const timeoutId = setTimeout(async () => {
+      if (pendingSave) {
+        try {
+          await saveToIndexedDB(state);
+        } catch (error) {
+          console.error('Failed to save to IndexedDB:', error);
+        }
+        setPendingSave(false);
+      }
+    }, 500); // Debounce saves
+
+    return () => clearTimeout(timeoutId);
+  }, [state, isStorageReady]);
+
+  const addSubject = useCallback((name: string, description?: string, color = '#6366f1'): Subject => {
     const subject: Subject = {
       id: generateId(),
       name,
@@ -81,10 +185,16 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     };
     setState(prev => ({ ...prev, subjects: [...prev.subjects, subject] }));
     return subject;
-  };
+  }, []);
 
-  const addSlide = (subjectId: string, slide: Omit<Slide, 'id'>): Slide => {
+  const addSlide = useCallback(async (subjectId: string, slide: Omit<Slide, 'id'>): Promise<Slide> => {
     const newSlide: Slide = { ...slide, id: generateId() };
+    
+    // Compress image if present to save storage space
+    if (newSlide.imageUrl && newSlide.imageUrl.startsWith('data:image')) {
+      newSlide.imageUrl = await compressImage(newSlide.imageUrl, 0.6);
+    }
+    
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.map(s => 
@@ -92,30 +202,39 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       ),
     }));
     return newSlide;
-  };
+  }, []);
 
-  const updateSlide = (subjectId: string, slideId: string, updates: Partial<Slide>) => {
+  const updateSlide = useCallback(async (subjectId: string, slideId: string, updates: Partial<Slide>) => {
+    // Compress image if updating imageUrl
+    let processedUpdates = updates;
+    if (updates.imageUrl && updates.imageUrl.startsWith('data:image')) {
+      processedUpdates = {
+        ...updates,
+        imageUrl: await compressImage(updates.imageUrl, 0.6)
+      };
+    }
+    
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.map(s => 
         s.id === subjectId ? {
           ...s,
-          slides: s.slides.map(sl => sl.id === slideId ? { ...sl, ...updates } : sl)
+          slides: s.slides.map(sl => sl.id === slideId ? { ...sl, ...processedUpdates } : sl)
         } : s
       ),
     }));
-  };
+  }, []);
 
-  const deleteSlide = (subjectId: string, slideId: string) => {
+  const deleteSlide = useCallback((subjectId: string, slideId: string) => {
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.map(s => 
         s.id === subjectId ? { ...s, slides: s.slides.filter(sl => sl.id !== slideId) } : s
       ),
     }));
-  };
+  }, []);
 
-  const addQuiz = (subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]): Quiz => {
+  const addQuiz = useCallback((subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]): Quiz => {
     const quiz: Quiz = {
       id: generateId(),
       subjectId,
@@ -125,9 +244,9 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     };
     setState(prev => ({ ...prev, quizzes: [...prev.quizzes, quiz] }));
     return quiz;
-  };
+  }, []);
 
-  const addStudyPlan = (subjectId: string, date: number, taskType: StudyPlan['taskType'], taskId?: string): StudyPlan => {
+  const addStudyPlan = useCallback((subjectId: string, date: number, taskType: StudyPlan['taskType'], taskId?: string): StudyPlan => {
     const plan: StudyPlan = {
       id: generateId(),
       subjectId,
@@ -138,18 +257,18 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     };
     setState(prev => ({ ...prev, studyPlans: [...prev.studyPlans, plan] }));
     return plan;
-  };
+  }, []);
 
-  const toggleStudyPlan = (planId: string) => {
+  const toggleStudyPlan = useCallback((planId: string) => {
     setState(prev => ({
       ...prev,
       studyPlans: prev.studyPlans.map(p => 
         p.id === planId ? { ...p, completed: !p.completed } : p
       ),
     }));
-  };
+  }, []);
 
-  const addStudySession = (subjectId: string, type: StudySession['type']): StudySession => {
+  const addStudySession = useCallback((subjectId: string, type: StudySession['type']): StudySession => {
     const session: StudySession = {
       id: generateId(),
       subjectId,
@@ -159,9 +278,9 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     };
     setState(prev => ({ ...prev, studySessions: [...prev.studySessions, session] }));
     return session;
-  };
+  }, []);
 
-  const completeSession = (sessionId: string, duration: number) => {
+  const completeSession = useCallback((sessionId: string, duration: number) => {
     setState(prev => {
       const now = Date.now();
       const lastStudyDate = prev.stats.lastStudyDate;
@@ -191,9 +310,9 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         },
       };
     });
-  };
+  }, []);
 
-  const addSpacedCard = (subjectId: string, question: string, answer: string): SpacedRepetitionCard => {
+  const addSpacedCard = useCallback((subjectId: string, question: string, answer: string): SpacedRepetitionCard => {
     const card: SpacedRepetitionCard = {
       id: generateId(),
       subjectId,
@@ -206,9 +325,9 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     };
     setState(prev => ({ ...prev, spacedCards: [...prev.spacedCards, card] }));
     return card;
-  };
+  }, []);
 
-  const reviewSpacedCard = (cardId: string, quality: number) => {
+  const reviewSpacedCard = useCallback((cardId: string, quality: number) => {
     setState(prev => ({
       ...prev,
       spacedCards: prev.spacedCards.map(card => {
@@ -241,9 +360,9 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         };
       }),
     }));
-  };
+  }, []);
 
-  const deleteSubject = (subjectId: string) => {
+  const deleteSubject = useCallback((subjectId: string) => {
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.filter(s => s.id !== subjectId),
@@ -251,14 +370,14 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       studyPlans: prev.studyPlans.filter(p => p.subjectId !== subjectId),
       spacedCards: prev.spacedCards.filter(c => c.subjectId !== subjectId),
     }));
-  };
+  }, []);
 
-  const deleteQuiz = (quizId: string) => {
+  const deleteQuiz = useCallback((quizId: string) => {
     setState(prev => ({
       ...prev,
       quizzes: prev.quizzes.filter(q => q.id !== quizId),
     }));
-  };
+  }, []);
 
   return (
     <StudyAppContext.Provider value={{
@@ -276,6 +395,7 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       reviewSpacedCard,
       deleteSubject,
       deleteQuiz,
+      isStorageReady,
     }}>
       {children}
     </StudyAppContext.Provider>

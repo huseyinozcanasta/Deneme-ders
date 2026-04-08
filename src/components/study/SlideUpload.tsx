@@ -216,10 +216,10 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
     setManualContent('');
   };
 
-  const handleSaveSlides = () => {
-    slides.forEach(slide => {
-      addSlide(subjectId, slide);
-    });
+  const handleSaveSlides = async () => {
+    for (const slide of slides) {
+      await addSlide(subjectId, slide);
+    }
     setSlides([]);
     onComplete?.();
   };
