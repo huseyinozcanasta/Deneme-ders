@@ -13,10 +13,24 @@ import { useToast } from '@/hooks/useToast';
 import { useUploadFile } from '@/hooks/useUploadFile';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { Slide } from '@/types/study';
-import * as pdfjsLib from 'pdfjs-dist';
 
-// PDF.js v3.11.174 worker - stable version with good CSP compatibility
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+// Configure PDF.js worker - using CDN with proper initialization
+if (typeof window !== 'undefined') {
+  // @ts-ignore - PDF.js worker setup
+  window.pdfjsWorkerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// Lazy load pdfjs-dist to avoid initialization issues
+let pdfjsLib: typeof import('pdfjs-dist') | null = null;
+
+async function getPdfJs() {
+  if (!pdfjsLib) {
+    pdfjsLib = await import('pdfjs-dist');
+    // Set worker source
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  return pdfjsLib;
+}
 
 interface SlideUploadProps {
   subjectId: string;
@@ -38,7 +52,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   const [manualContent, setManualContent] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const renderPDFPage = async (pdfDoc: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<{ imageData: string; textContent: string }> => {
+  const renderPDFPage = async (pdfDoc: import('pdfjs-dist').PDFDocumentProxy, pageNum: number): Promise<{ imageData: string; textContent: string }> => {
     const page = await pdfDoc.getPage(pageNum);
     const scale = 2; // Higher scale for better quality
     const viewport = page.getViewport({ scale });
@@ -115,7 +129,10 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
             throw new Error('PDF dosyası boş veya okunamıyor');
           }
           
-          const loadingTask = pdfjsLib.getDocument({ 
+          // Get pdfjs library and initialize
+          const pdfjs = await getPdfJs();
+          
+          const loadingTask = pdfjs.getDocument({ 
             data: arrayBuffer,
             cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/`,
             cMapPacked: true,
