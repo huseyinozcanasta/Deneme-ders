@@ -1,0 +1,40 @@
+{
+  "name": "StudyFlow",
+  "short_name": "StudyFlow",
+  "id": "/Deneme-ders/",
+  "description": "Akıllı Ders Çalışma Platformu - Slaytlarınızı yükleyin, otomatik quizler oluşturun ve spaced repetition ile verimli çalışın.",
+  "start_url": "/Deneme-ders/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Konularım",
+      "url": "subjects",
+      "description": "Çalışmak istediğiniz konuları yönetin"
+    }
+  ]
+}
