@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File } from 'lucide-react';
+import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { useStudyApp } from '@/contexts/StudyAppContext';
+import { useToast } from '@/hooks/useToast';
 import type { Slide } from '@/types/study';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -22,6 +23,7 @@ interface SlideUploadProps {
 
 export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   const { addSlide } = useStudyApp();
+  const { toast } = useToast();
   const [slides, setSlides] = useState<Omit<Slide, 'id'>[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,8 +93,28 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
         
         try {
           const arrayBuffer = await file.arrayBuffer();
-          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          
+          // Validate file size before processing
+          if (arrayBuffer.byteLength === 0) {
+            throw new Error('PDF dosyası boş veya okunamıyor');
+          }
+          
+          const loadingTask = pdfjsLib.getDocument({ 
+            data: arrayBuffer,
+            cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
+            cMapPacked: true,
+          });
+          
+          const pdfDoc = await loadingTask.promise;
           const numPages = pdfDoc.numPages;
+          
+          // Check if PDF has too many pages
+          if (numPages > 100) {
+            toast({
+              title: "Uyarı",
+              description: `${file.name} dosyası çok sayıda sayfa içeriyor (${numPages}). İşlem uzun sürebilir.`,
+            });
+          }
           
           for (let pageNum = 1; pageNum <= numPages; pageNum++) {
             setProcessingStatus(`${file.name} - Sayfa ${pageNum}/${numPages}`);
@@ -117,12 +139,34 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
               setSlides(prev => [...prev, newSlide]);
             }
           }
-        } catch (pdfError) {
+        } catch (pdfError: any) {
           console.error('Error loading PDF:', pdfError);
+          
+          // Provide specific error messages based on the error
+          let errorMessage = 'PDF dosyası yüklenemedi';
+          
+          if (pdfError.name === 'PasswordException') {
+            errorMessage = 'Bu PDF şifre korumalı. Lütfen şifresiz bir PDF kullanın.';
+          } else if (pdfError.name === 'InvalidPDFException' || pdfError.message?.includes('Invalid PDF')) {
+            errorMessage = 'Bu PDF dosyası geçersiz veya bozuk görünüyor.';
+          } else if (pdfError.message?.includes('Missing PDF')) {
+            errorMessage = 'PDF dosyası bulunamadı veya okunamıyor.';
+          } else if (pdfError.message?.includes('empty')) {
+            errorMessage = 'PDF dosyası boş.';
+          } else {
+            errorMessage = `PDF yüklenemedi: ${pdfError.message || 'Bilinmeyen hata'}`;
+          }
+          
+          toast({
+            title: "PDF Yükleme Hatası",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          
           // Create error slide
           const newSlide: Omit<Slide, 'id'> = {
             title: fileName,
-            content: `PDF yüklenemedi: ${file.name}`,
+            content: `PDF yüklenemedi: ${file.name}\n\n${errorMessage}`,
           };
           setSlides(prev => [...prev, newSlide]);
         }
@@ -242,6 +286,20 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
                       <div>
                         <p className="font-medium">Slayt dosyalarınızı sürükleyin veya tıklayın</p>
                         <p className="text-sm text-muted-foreground">PDF, PNG, JPG, TXT, MD desteklenir</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-muted/50 rounded-lg text-xs">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600" />
+                        <div className="space-y-1">
+                          <p className="font-medium text-amber-700 dark:text-amber-400">PDF İpuçları:</p>
+                          <ul className="space-y-0.5 text-muted-foreground list-disc list-inside">
+                            <li>Şifresiz PDF dosyaları kullanın</li>
+                            <li>Standart PDF formatında kaydedin</li>
+                            <li>Çok büyük dosyalar işlem süresini uzatabilir</li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   </div>
