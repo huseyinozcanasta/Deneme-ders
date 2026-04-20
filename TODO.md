@@ -1,10 +1,9 @@
-# Firebase Email/Google Auth Integration TODO
+# Task: Fix 404 errors on deployed GitHub Pages site (hashed assets, icon.svg, manifest)
 
 ## Steps:
-1. [x] Wrap App.tsx with AuthProvider from src/contexts/AuthContext.tsx.
-2. [x] Add /login route to src/AppRouter.tsx.
-3. [x] Update src/pages/Login.tsx with Firebase email/password register/login form + Google button. Remove Nostr LoginArea.
-4. [x] Add auth guard to src/pages/Index.tsx: redirect to /login if no user.\n5. [x] Read src/pages/Index.tsx content for integration.
-6. [x] Test: npm run dev, check redirect and auth flows.\n7. [x] Verify Firebase Console: Enable Email/Password and Google providers.\n\n**Task complete!**
-
-**Notes**: Remove Nostr auth dependency. Auto-redirect unauth users to /login page.
+1. [x] Create public/manifest.webmanifest with basic PWA config and icon reference
+2. [x] Create public/icon.svg (simple placeholder icon)
+3. [x] Update vite.config.ts to add `base: '/Deneme-ders/'` for subdir deployment
+4. [x] Build project (`npm run build`) and verify dist/assets exist, no 404s locally
+5. [x] Update deploy instructions in README or package.json for GH Pages/Firebase
+6. [x] [Optional] Deploy to Firebase Hosting for better SPA support - See README.md

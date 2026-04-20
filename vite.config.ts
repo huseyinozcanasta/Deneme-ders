@@ -4,7 +4,9 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 // https://vitejs.dev/config/
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/Deneme-ders/' : '/',
+
   server: {
     host: "::",
     port: 8080,
