@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "npm i --silent && vite",
-    "build": "npm i --silent && vite build -l error && copy dist\\index.html dist\\404.html && echo Project built successfully!",
+"build": "npm i --silent && vite build --mode production && cp dist/index.html dist/404.html || copy dist\\index.html dist\\404.html && echo Project built successfully!",
     "start": "vite preview --port 8080 --host",
-    "test": "npm i --silent && tsc --noEmit && eslint && vitest run --reporter=dot --silent && vite build -l error && copy dist\\index.html dist\\404.html && echo All tests passed!"
+"test": "npm i --silent && tsc --noEmit && eslint && vitest run --reporter=dot --silent && vite build --mode production && cp dist/index.html dist/404.html || copy dist\\index.html dist\\404.html && echo All tests passed!"
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
