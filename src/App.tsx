@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AppProvider } from '@/components/AppProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { StudyAppProvider } from '@/contexts/StudyAppContext';
 import AppRouter from '@/AppRouter';
 
 const queryClient = new QueryClient({
