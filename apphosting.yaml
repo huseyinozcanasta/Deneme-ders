@@ -11,3 +11,4 @@ runConfig:
 buildConfig:
   # Vite build sonucunda oluşan klasörü hedef gösteriyoruz
   outputDirectory: "dist"
+  # deneme
