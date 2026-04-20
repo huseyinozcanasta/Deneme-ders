@@ -1,1 +1,9 @@
-# Firebase Deploy Fix TODO\n\n- [x] Step 1: Edit studyflow-default/src/index.ts to comment out unused imports (lines 11-12)\n- [x] Step 2: Verify build in studyflow-default (predeploy tsc succeeded in firebase deploy)\n- [x] Step 3: Install deps handled by predeploy\n- [x] Step 4: firebase deploy --only functions running successfully (analyzing codebases, APIs enabling)\n- [ ] Step 5: Full firebase deploy\n- [ ] Step 6: Verify with firebase functions:list
+# GitHub Actions Fix Plan
+
+**Approved Plan Steps:**
+
+1. [ ] Read full src/App.tsx to confirm structure.
+2. [ ] Edit src/App.tsx: Wrap content in default export function App().
+3. [x] Test npm run build locally.
+4. [ ] Commit and push fix to origin main.
+5. [ ] Verify GitHub Actions success.
