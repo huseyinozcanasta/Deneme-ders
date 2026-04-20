@@ -24,11 +24,13 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <StrictMode>
         <ErrorBoundary>
-          <AppProvider storageKey="studyflow-app" defaultConfig={defaultConfig}>
-            <AuthProvider> {/* Firebase Auth wrapper */}
-              <AppRouter />
-              <Toaster />
-            </AuthProvider>
+<AppProvider storageKey="studyflow-app" defaultConfig={defaultConfig}>
+            <StudyAppProvider>
+              <AuthProvider> {/* Firebase Auth wrapper */}
+                <AppRouter />
+                <Toaster />
+              </AuthProvider>
+            </StudyAppProvider>
           </AppProvider>
         </ErrorBoundary>
       </StrictMode>
