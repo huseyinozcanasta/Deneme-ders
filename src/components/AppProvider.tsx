@@ -24,7 +24,7 @@ const RelayMetadataSchema = z.object({
 // Zod schema for AppConfig validation
 const AppConfigSchema = z.object({
   theme: z.enum(['dark', 'light', 'system']),
-  relayMetadata: RelayMetadataSchema,
+  relayMetadata: RelayMetadataSchema.optional(),
 }) satisfies z.ZodType<AppConfig>;
 
 export function AppProvider(props: AppProviderProps) {

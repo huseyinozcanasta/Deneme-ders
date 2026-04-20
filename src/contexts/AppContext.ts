@@ -13,7 +13,7 @@ export interface AppConfig {
   /** Current theme */
   theme: Theme;
   /** NIP-65 relay list metadata */
-  relayMetadata: RelayMetadata;
+  relayMetadata?: RelayMetadata;
 }
 
 export interface AppContextType {

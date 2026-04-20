@@ -3,12 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AppProvider } from '@/components/AppProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import NostrProvider from '@/components/NostrProvider';
-import { DMProvider } from '@/components/DMProvider';
-import { AuthProvider } from '@/contexts/AuthContext'; // Added Firebase Auth
-import AppRouter from './AppRouter';
-import { AppContext } from '@/contexts/AppContext';
-import { PROTOCOL_MODE } from '@/lib/dmConstants';
+import { AuthProvider } from '@/contexts/AuthContext';
+import AppRouter from '@/AppRouter';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,21 +17,6 @@ const queryClient = new QueryClient({
 
 const defaultConfig = {
   theme: 'system' as const,
-  relayMetadata: {
-    relays: [
-      {
-        url: 'wss://relay.damus.io',
-        read: true,
-        write: true,
-      },
-      {
-        url: 'wss://nostr-pub.wellorder.net',
-        read: true,
-        write: true,
-      },
-    ],
-    updatedAt: Date.now(),
-  },
 };
 
 export default function App() {
@@ -45,12 +26,8 @@ export default function App() {
         <ErrorBoundary>
           <AppProvider storageKey="studyflow-app" defaultConfig={defaultConfig}>
             <AuthProvider> {/* Firebase Auth wrapper */}
-              <NostrProvider>
-                <DMProvider config={{ enabled: true, protocolMode: PROTOCOL_MODE.NIP17_ONLY }}>
-                  <AppRouter />
-                  <Toaster />
-                </DMProvider>
-              </NostrProvider>
+              <AppRouter />
+              <Toaster />
             </AuthProvider>
           </AppProvider>
         </ErrorBoundary>

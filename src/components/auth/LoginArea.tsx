@@ -1,12 +1,12 @@
-// NOTE: This file is stable and usually should not be modified.
-// It is important that all functionality in this file is preserved, and should only be modified if explicitly requested.
+
+
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button.tsx';
 import LoginDialog from './LoginDialog';
 import SignupDialog from './SignupDialog';
-import { useLoggedInAccounts } from '@/hooks/useLoggedInAccounts';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { AccountSwitcher } from './AccountSwitcher';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export interface LoginAreaProps {
@@ -14,7 +14,7 @@ export interface LoginAreaProps {
 }
 
 export function LoginArea({ className }: LoginAreaProps) {
-  const { currentUser } = useLoggedInAccounts();
+  const { user } = useCurrentUser();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [signupDialogOpen, setSignupDialogOpen] = useState(false);
 
@@ -25,7 +25,7 @@ export function LoginArea({ className }: LoginAreaProps) {
 
   return (
     <div className={cn("inline-flex items-center justify-center", className)}>
-      {currentUser ? (
+      {user ? (
         <AccountSwitcher onAddAccountClick={() => setLoginDialogOpen(true)} />
       ) : (
         <div className="flex gap-3 justify-center">
