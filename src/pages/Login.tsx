@@ -1,22 +1,160 @@
-import React from 'react';
-import { LoginArea } from '@/components/auth/LoginArea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function LoginPage() {
+  const { user, loading, error, signInEmail, registerEmail, signInGoogle } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegister, setIsRegister] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (isRegister) {
+        await registerEmail(email, password);
+      } else {
+        await signInEmail(email, password);
+      }
+      toast({
+        title: isRegister ? 'Kayıt başarılı!' : 'Giriş başarılı!',
+        description: 'Yönlendiriliyorsunuz...',
+      });
+    } catch (err) {
+      toast({
+        title: 'Hata',
+        description: error || 'Bir hata oluştu.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsSubmitting(true);
+    try {
+      await signInGoogle();
+      toast({
+        title: 'Google ile giriş başarılı!',
+        description: 'Yönlendiriliyorsunuz...',
+      });
+    } catch (err) {
+      toast({
+        title: 'Hata',
+        description: error || 'Google girişi başarısız.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-12 px-4 max-w-md flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-12 px-4 max-w-md">
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl">
+            {isRegister ? 'Hesap Oluştur' : 'Hoş Geldin'}
+          </CardTitle>
           <CardDescription>
-            Sign in to your account to continue
+            {isRegister ? 'E-posta ve şifre ile kaydolun veya Google kullanın.' : 'Hesabınıza giriş yapın veya kaydolun.'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-6">
-            <LoginArea />
-          </div>
+        <CardContent className="space-y-4">
+          <Tabs defaultValue="email" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">E-posta</TabsTrigger>
+              <TabsTrigger value="google">Google</TabsTrigger>
+            </TabsList>
+            <TabsContent value="email" className="space-y-4 mt-4">
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">E-posta</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Şifre</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="********"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isRegister ? 'Kaydol' : 'Giriş Yap'}
+                </Button>
+              </form>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsRegister(!isRegister)}
+              >
+                {isRegister ? 'Zaten hesabın var mı? Giriş Yap' : 'Hesabın yok mu? Kaydol'}
+              </Button>
+            </TabsContent>
+            <TabsContent value="google" className="space-y-4 mt-4">
+              <Button
+                onClick={handleGoogleSignIn}
+                className="w-full"
+                variant="outline"
+                disabled={isSubmitting}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Google ile {isRegister ? 'Kaydol' : 'Giriş Yap'}
+              </Button>
+            </TabsContent>
+          </Tabs>
         </CardContent>
+        <CardFooter className="flex flex-col space-y-2">
+          <p className="text-xs text-muted-foreground text-center">
+            Firebase Authentication ile korunuyor.
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

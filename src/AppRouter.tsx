@@ -9,6 +9,7 @@ import { SubjectDetail } from "./components/study/SubjectDetail";
 import { SpacedRepetition } from "./components/study/SpacedRepetition";
 import { StudyPlanner } from "./components/study/StudyPlanner";
 import { StatsDashboard } from "./components/study/StatsDashboard";
+import LoginPage from "./pages/Login";
 
 export function AppRouter() {
   return (
@@ -21,6 +22,7 @@ export function AppRouter() {
         <Route path="/review" element={<SpacedRepetition />} />
         <Route path="/planner" element={<StudyPlanner />} />
         <Route path="/stats" element={<StatsDashboard />} />
+        <Route path="/login" element={<LoginPage />} />
         {/* NIP-19 route for npub1, note1, naddr1, nevent1, nprofile1 */}
         <Route path="/:nip19" element={<NIP19Page />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

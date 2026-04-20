@@ -5,6 +5,7 @@ import { AppProvider } from '@/components/AppProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import NostrProvider from '@/components/NostrProvider';
 import { DMProvider } from '@/components/DMProvider';
+import { AuthProvider } from '@/contexts/AuthContext'; // Added Firebase Auth
 import AppRouter from './AppRouter';
 import { AppContext } from '@/contexts/AppContext';
 import { PROTOCOL_MODE } from '@/lib/dmConstants';
@@ -43,12 +44,14 @@ export default function App() {
       <StrictMode>
         <ErrorBoundary>
           <AppProvider storageKey="studyflow-app" defaultConfig={defaultConfig}>
-            <NostrProvider>
-              <DMProvider config={{ enabled: true, protocolMode: PROTOCOL_MODE.NIP17_ONLY }}>
-                <AppRouter />
-                <Toaster />
-              </DMProvider>
-            </NostrProvider>
+            <AuthProvider> {/* Firebase Auth wrapper */}
+              <NostrProvider>
+                <DMProvider config={{ enabled: true, protocolMode: PROTOCOL_MODE.NIP17_ONLY }}>
+                  <AppRouter />
+                  <Toaster />
+                </DMProvider>
+              </NostrProvider>
+            </AuthProvider>
           </AppProvider>
         </ErrorBoundary>
       </StrictMode>

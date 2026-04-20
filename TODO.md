@@ -1,9 +1,10 @@
-# GitHub Actions Fix Plan
+# Firebase Email/Google Auth Integration TODO
 
-**Approved Plan Steps:**
+## Steps:
+1. [x] Wrap App.tsx with AuthProvider from src/contexts/AuthContext.tsx.
+2. [x] Add /login route to src/AppRouter.tsx.
+3. [x] Update src/pages/Login.tsx with Firebase email/password register/login form + Google button. Remove Nostr LoginArea.
+4. [x] Add auth guard to src/pages/Index.tsx: redirect to /login if no user.\n5. [x] Read src/pages/Index.tsx content for integration.
+6. [x] Test: npm run dev, check redirect and auth flows.\n7. [x] Verify Firebase Console: Enable Email/Password and Google providers.\n\n**Task complete!**
 
-1. [ ] Read full src/App.tsx to confirm structure.
-2. [ ] Edit src/App.tsx: Wrap content in default export function App().
-3. [x] Test npm run build locally.
-4. [ ] Commit and push fix to origin main.
-5. [ ] Verify GitHub Actions success.
+**Notes**: Remove Nostr auth dependency. Auto-redirect unauth users to /login page.

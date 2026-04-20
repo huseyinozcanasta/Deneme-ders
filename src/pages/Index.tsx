@@ -1,18 +1,36 @@
 import { useSeoMeta } from '@unhead/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, Flame, Target, Brain, Calendar, BarChart3, Zap, ChevronRight, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStudyApp } from '@/contexts/StudyAppContext';
-import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
   useSeoMeta({
     title: 'StudyFlow - Akıllı Ders Çalışma Platformu',
     description: 'Slaytlarınızı yükleyin, otomatik quizler oluşturun ve spaced repetition ile verimli çalışın.',
   });
 
   const { state } = useStudyApp();
-  const navigate = useNavigate();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
