@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+// import { useToast } from '@/components/ui/use-toast';
 
 export default function LoginPage() {
   const { user, loading, error, signInEmail, registerEmail, signInGoogle } = useAuth();
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate('/home');
     }
   }, [user, navigate]);
 
@@ -32,16 +32,9 @@ export default function LoginPage() {
       } else {
         await signInEmail(email, password);
       }
-      toast({
-        title: isRegister ? 'Kayıt başarılı!' : 'Giriş başarılı!',
-        description: 'Yönlendiriliyorsunuz...',
-      });
+      console.log(isRegister ? 'Kayıt başarılı!' : 'Giriş başarılı! Yönlendiriliyorsun...');
     } catch (err) {
-      toast({
-        title: 'Hata',
-        description: error || 'Bir hata oluştu.',
-        variant: 'destructive',
-      });
+      console.error('Giriş hatası:', error || 'Bir hata oluştu.');
     } finally {
       setIsSubmitting(false);
     }
@@ -51,16 +44,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await signInGoogle();
-      toast({
-        title: 'Google ile giriş başarılı!',
-        description: 'Yönlendiriliyorsunuz...',
-      });
+      console.log('Google ile giriş başarılı! Yönlendiriliyorsun...');
     } catch (err) {
-      toast({
-        title: 'Hata',
-        description: error || 'Google girişi başarısız.',
-        variant: 'destructive',
-      });
+      console.error('Google giriş hatası:', error || 'Google girişi başarısız.');
     } finally {
       setIsSubmitting(false);
     }

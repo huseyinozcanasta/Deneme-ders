@@ -11,18 +11,19 @@ const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
-  }, [user, loading, navigate]);
+  // Redirect handled by auth flow
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
       </div>
     );
+  }
+
+  if (!user) {
+    navigate('/');
+    return null;
   }
 
   useSeoMeta({

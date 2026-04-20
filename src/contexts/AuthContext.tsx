@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -27,11 +28,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Fallback if Firebase listener fails
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setUser(null);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+      // Force logout on init to always show login screen
+      if (user) {
+        signOut(auth).catch(console.error);
+      }
     });
     return unsubscribe;
   }, []);

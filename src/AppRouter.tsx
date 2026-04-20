@@ -17,7 +17,8 @@ export function AppRouter() {
     <BrowserRouter>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Index />} />
+<Route path="/" element={<LoginPage />} />
+        <Route path="/home" element={<Index />} />
         <Route path="/subjects" element={<SubjectList />} />
         <Route path="/subject/:id" element={<SubjectDetail />} />
         <Route path="/review" element={<SpacedRepetition />} />

@@ -1,8 +1,9 @@
-# TODO: Fix /Deneme-ders 404 - COMPLETED
+# Fix Login Screen Skip Issue
 
-- [x] Create TODO.md with steps (done)
-- [x] Edit src/AppRouter.tsx to add import { Quiz } from "./components/study/Quiz";
-- [x] Edit src/AppRouter.tsx to add `<Route path=\"/Deneme-ders\" element={<StudyMode />} />` before catch-all (fixed export issue)
-- [x] Test with npm run dev and visit /Deneme-ders (white screen fixed)
-- [x] Update TODO.md with completion
-- [x] Attempt completion
+## Steps:
+- [x] Step 1: Edit src/contexts/AuthContext.tsx to disable Firebase auth persistence
+- [x] Step 2: Cleanup redirect logic in src/pages/Index.tsx 
+- [ ] Step 3: Test app with `npm run dev` to confirm login screen appears on launch
+- [ ] Step 4: Verify login/logout flow works correctly
+- [ ] Complete: attempt_completion
+
