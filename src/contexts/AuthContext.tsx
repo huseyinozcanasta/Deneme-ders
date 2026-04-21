@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import type { User } from '@/types/user';
 
 interface AuthContextType {
   user: User | null;
@@ -38,11 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Convert Firebase User to our extended User type
+        const extendedUser: User = {
+          ...firebaseUser,
+          // Nostr properties will be populated by NostrSync if needed
+          pubkey: undefined,
+          signer: undefined,
+          nostrMetadata: undefined,
+        };
+        setUser(extendedUser);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
-      // Force logout on init to always show login screen
-
     });
     return unsubscribe;
   }, []);

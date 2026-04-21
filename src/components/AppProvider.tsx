@@ -8,7 +8,7 @@ interface AppProviderProps {
   /** Application storage key */
   storageKey: string;
   /** Default app configuration */
-  defaultConfig: AppConfig;
+  defaultConfig: Omit<AppConfig, 'relayMetadata'> & { relayMetadata?: RelayMetadata };
 }
 
 // Zod schema for RelayMetadata validation
@@ -52,7 +52,19 @@ export function AppProvider(props: AppProviderProps) {
     setConfig(updater);
   };
 
-  const config = { ...defaultConfig, ...rawConfig };
+  // Ensure relayMetadata has a default value if not provided
+  const config: AppConfig = {
+    ...defaultConfig,
+    ...rawConfig,
+    relayMetadata: rawConfig.relayMetadata ?? defaultConfig.relayMetadata ?? {
+      relays: [
+        { url: 'wss://relay.ditto.pub', read: true, write: true },
+        { url: 'wss://relay.primal.net', read: true, write: true },
+        { url: 'wss://relay.damus.io', read: true, write: true },
+      ],
+      updatedAt: 0,
+    },
+  };
 
   const appContextValue: AppContextType = {
     config,
