@@ -15,7 +15,7 @@ import SettingsPage from "./pages/Settings";
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Deneme-ders">
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LoginPage />} />
