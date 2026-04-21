@@ -184,18 +184,32 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || !isStorageReady) return;
 
+    let isMounted = true;
     const syncData = async () => {
       try {
-        // Wait for Firebase data to load
-        const promises: Promise<any>[] = [];
-        if (firebaseSync.subjects) promises.push(Promise.resolve(firebaseSync.subjects));
-        if (firebaseSync.quizzes) promises.push(Promise.resolve(firebaseSync.quizzes));
-        if (firebaseSync.studyPlans) promises.push(Promise.resolve(firebaseSync.studyPlans));
-        if (firebaseSync.spacedCards) promises.push(Promise.resolve(firebaseSync.spacedCards));
-        if (firebaseSync.studySessions) promises.push(Promise.resolve(firebaseSync.studySessions));
-        if (firebaseSync.userProfile) promises.push(Promise.resolve(firebaseSync.userProfile));
+        // Use setTimeout to prevent blocking the main thread
+        await new Promise(resolve => setTimeout(resolve, 0));
         
-        const [fbSubjects, fbQuizzes, fbStudyPlans, fbSpacedCards, fbStudySessions, fbUserProfile] = await Promise.all(promises);
+        if (!isMounted) return;
+
+        // Wait for Firebase data to load with timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Firebase sync timeout')), 10000)
+        );
+        
+        const dataPromise = Promise.all([
+          firebaseSync.subjects || Promise.resolve([]),
+          firebaseSync.quizzes || Promise.resolve([]),
+          firebaseSync.studyPlans || Promise.resolve([]),
+          firebaseSync.spacedCards || Promise.resolve([]),
+          firebaseSync.studySessions || Promise.resolve([]),
+          firebaseSync.userProfile || Promise.resolve(null),
+        ]);
+
+        const [fbSubjects, fbQuizzes, fbStudyPlans, fbSpacedCards, fbStudySessions, fbUserProfile] = 
+          await Promise.race([dataPromise, timeoutPromise]) as [any, any, any, any, any, any];
+
+        if (!isMounted) return;
 
         // Convert Firebase data to local format
         const convertedSubjects = fbSubjects?.map(firebaseSync.convertSubjectFromFirebase) || [];
@@ -222,12 +236,18 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
 
         setIsFirebaseSynced(true);
       } catch (error) {
-        console.error('Failed to sync with Firebase:', error);
-        setIsFirebaseSynced(false);
+        if (isMounted) {
+          console.error('Failed to sync with Firebase:', error);
+          setIsFirebaseSynced(false);
+        }
       }
     };
 
     syncData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user, isStorageReady, firebaseSync, localSlideState]);
 
   // Debounced save to IndexedDB (slides only)
