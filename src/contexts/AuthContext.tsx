@@ -42,9 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       setLoading(false);
       // Force logout on init to always show login screen
-      if (user) {
-        signOut(auth).catch(console.error);
-      }
+
     });
     return unsubscribe;
   }, []);
