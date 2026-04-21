@@ -20,6 +20,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/home" element={<Index />} />
+        <Route path="/login" element={<LoginPage />} index />
         <Route path="/subjects" element={<SubjectList />} />
         <Route path="/subject/:id" element={<SubjectDetail />} />
         <Route path="/review" element={<SpacedRepetition />} />
