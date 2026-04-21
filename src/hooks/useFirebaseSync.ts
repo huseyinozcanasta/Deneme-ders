@@ -326,7 +326,7 @@ export function useFirebaseSync() {
     description: fbSubject.description || undefined,
     color: fbSubject.color,
     slides: [], // Slides are stored locally only
-    createdAt: fbSubject.createdAt?.toMillis() || Date.now(),
+    createdAt: (fbSubject.createdAt && typeof fbSubject.createdAt.toMillis === 'function') ? fbSubject.createdAt.toMillis() : Date.now(),
   });
 
   const convertSubjectToFirebase = (subject: Subject) => ({
