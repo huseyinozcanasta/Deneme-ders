@@ -12,11 +12,15 @@ export function useUploadFile() {
         throw new Error('Must be logged in to upload files');
       }
 
+      if (!('signer' in user) || !user.signer) {
+        throw new Error('Nostr signer required for image upload. Please log in with a Nostr extension.');
+      }
+
       const uploader = new BlossomUploader({
         servers: [
           'https://blossom.primal.net/',
         ],
-        signer: user.signer,
+        signer: (user as any).signer,
       });
 
       const tags = await uploader.upload(file);

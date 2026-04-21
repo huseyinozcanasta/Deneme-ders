@@ -296,12 +296,12 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const subjectData = {
+      const subjectData: any = {
         name,
-        description: description || undefined,
         color,
         createdAt: Date.now(),
       };
+      if (description) subjectData.description = description;
       
       const result = await firebaseSync.createSubjectMutation.mutateAsync(subjectData);
       const subject = firebaseSync.convertSubjectFromFirebase(result);
