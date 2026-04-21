@@ -29,27 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Fallback if Firebase listener fails
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      setUser(null);
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, []);
-
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Convert Firebase User to our extended User type
-        const extendedUser: User = {
-          ...firebaseUser,
-          // Nostr properties will be populated by NostrSync if needed
-          pubkey: undefined,
-          signer: undefined,
-          nostrMetadata: undefined,
-        };
-        setUser(extendedUser);
+        setUser(firebaseUser);
       } else {
         setUser(null);
       }
@@ -62,8 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'Giriş başarısız oldu.');
+      throw err;
     }
   };
 
@@ -71,8 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'Kayıt başarısız oldu.');
+      throw err;
     }
   };
 
@@ -81,8 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'Google girişi başarısız oldu.');
+      throw err;
     }
   };
 
@@ -90,8 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await signOut(auth);
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err.message || 'Çıkış başarısız oldu.');
+      throw err;
     }
   };
 

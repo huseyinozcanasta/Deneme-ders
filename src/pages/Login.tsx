@@ -34,7 +34,7 @@ export default function LoginPage() {
       }
       console.log(isRegister ? 'Kayıt başarılı!' : 'Giriş başarılı! Yönlendiriliyorsun...');
     } catch (err) {
-      console.error('Giriş hatası:', error || 'Bir hata oluştu.');
+      console.error('Giriş hatası:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +46,7 @@ export default function LoginPage() {
       await signInGoogle();
       console.log('Google ile giriş başarılı! Yönlendiriliyorsun...');
     } catch (err) {
-      console.error('Google giriş hatası:', error || 'Google girişi başarısız.');
+      console.error('Google giriş hatası:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -71,6 +71,13 @@ export default function LoginPage() {
             {isRegister ? 'E-posta ve şifre ile kaydolun veya Google kullanın.' : 'Hesabınıza giriş yapın veya kaydolun.'}
           </CardDescription>
         </CardHeader>
+        {error && (
+          <div className="px-6 pb-2">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          </div>
+        )}
         <CardContent className="space-y-4">
           <Tabs defaultValue="email" className="w-full">
             <TabsList className="grid w-full grid-cols-2">

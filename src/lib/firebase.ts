@@ -17,6 +17,11 @@ const app = initializeApp(firebaseConfig, 'studyflow');
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
+// Configure auth for development
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  auth.settings.appVerificationDisabledForTesting = true;
+}
+
 
 
 
