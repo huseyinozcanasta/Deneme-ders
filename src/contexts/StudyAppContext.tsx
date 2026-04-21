@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirebaseSync } from '@/hooks/useFirebaseSync';
 import type { 
@@ -248,15 +248,18 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [user, isStorageReady, firebaseSync, localSlideState]);
+  }, [user, isStorageReady, localSlideState]);
 
   // Debounced save to IndexedDB (slides only)
+  const pendingSaveRef = useRef(pendingSave);
+  pendingSaveRef.current = pendingSave;
+
   useEffect(() => {
     if (!isStorageReady) return;
     
     setPendingSave(true);
     const timeoutId = setTimeout(async () => {
-      if (pendingSave) {
+      if (pendingSaveRef.current) {
         try {
           // Save only slides to IndexedDB
           const stateWithSlides = {
