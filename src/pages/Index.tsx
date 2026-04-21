@@ -11,7 +11,11 @@ const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect handled by auth flow
+  useEffect(() => {
+    if (!user && !loading) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -22,7 +26,6 @@ const Index = () => {
   }
 
   if (!user) {
-    navigate('/');
     return null;
   }
 
