@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
-// import { useToast } from '@/components/ui/use-toast';
 
 export default function LoginPage() {
   const { user, loading, error, signInEmail, registerEmail, signInGoogle } = useAuth();
@@ -18,10 +17,12 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      navigate('/home');
+    console.log('Login useEffect:', { user: !!user, loading });
+    if (user && !loading) {
+      console.log('Navigating to /home');
+      navigate('/home', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +44,8 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
+      console.log('Starting Google signInWithRedirect...');
       await signInGoogle();
-      console.log('Google ile giriş başarılı! Yönlendiriliyorsun...');
     } catch (err) {
       console.error('Google giriş hatası:', err);
       setIsSubmitting(false);

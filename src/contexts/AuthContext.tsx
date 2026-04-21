@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { User as FirebaseUser, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { User } from '@/types/user';
 
@@ -18,7 +18,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function useAuth() {
-const context = useContext(AuthContext);
+  const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
@@ -31,25 +31,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const handleAuthChange = async () => {
       try {
-        if (firebaseUser) {
-          setUser(firebaseUser);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Auth state change error:', error);
-        setUser(null);
-      } finally {
+        // Handle redirect result first
+        const redirectResult = await getRedirectResult(auth);
+        console.log('Redirect result:', redirectResult);
+        
+        // Then listen for auth state
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+          console.log('Auth state changed:', firebaseUser ? firebaseUser.email : 'null');
+          try {
+            if (firebaseUser) {
+              setUser(firebaseUser);
+              setError(null);
+            } else {
+              setUser(null);
+            }
+          } catch (err) {
+            console.error('Auth state change error:', err);
+            setUser(null);
+          } finally {
+            setLoading(false);
+          }
+        });
+        return unsubscribe;
+      } catch (err: any) {
+        console.error('Redirect result error:', err);
+        setError(err.message);
         setLoading(false);
       }
-    });
-    return unsubscribe;
+    };
+
+    handleAuthChange();
   }, []);
 
   const signInEmail = async (email: string, password: string) => {
     setError(null);
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
@@ -60,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerEmail = async (email: string, password: string) => {
     setError(null);
+    setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
