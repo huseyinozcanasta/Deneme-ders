@@ -24,6 +24,16 @@ if (typeof window !== 'undefined') {
 // Lazy load pdfjs-dist to avoid initialization issues
 let pdfjsLib: typeof import('pdfjs-dist') | null = null;
 
+function dataURLtoBlob(dataUrl: string): Blob {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], { type: mime });
+}
+
 async function getPdfJs() {
   if (!pdfjsLib) {
     pdfjsLib = await import('pdfjs-dist');
@@ -267,8 +277,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
           
           try {
             // Convert data URL to Blob
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
+            const blob = dataURLtoBlob(imageUrl);
             const fileName = `${slide.title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.jpg`;
             // Create File from blob using a different approach
             const imageFile = new File([blob], fileName, { type: 'image/jpeg' });
