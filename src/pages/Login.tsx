@@ -47,7 +47,6 @@ export default function LoginPage() {
       console.log('Google ile giriş başarılı! Yönlendiriliyorsun...');
     } catch (err) {
       console.error('Google giriş hatası:', err);
-    } finally {
       setIsSubmitting(false);
     }
   };

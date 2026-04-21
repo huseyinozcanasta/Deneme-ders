@@ -6,4 +6,8 @@
 - [x] Step 3: Add COOP meta header to index.html
 - [ ] Step 4: Test & complete
 
-Current: Steps 1-3 complete. Ready for testing.
+Current: 
+- [x] Firebase Storage code 
+- [x] Deploy storage.rules 
+- [x] Auth redirect flow (no COOP)
+- Test upload works!
