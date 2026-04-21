@@ -1,11 +1,13 @@
-# Task Progress: Fix Google Login CSP Issue
+# Task Progress: Fix Google Login CSP + TS Error
 
-## Plan Breakdown
-✅ **Step 1**: Create TODO.md with steps (done)  
-✅ **Step 2**: Edit index.html CSP to allow Google APIs (done)  
-✅ **Step 3**: Test locally (recommend: npm run dev, click Google login)  
-✅ **Step 4**: Build & verify production bundle (npm run build && npm start)  
-✅ **Step 5**: Task complete - Google login CSP fixed!
+## CSP Done
+✅ Updated index.html CSP (2 commits)
+✅ Deployed to GH Pages via npx gh-pages -d dist
 
-**Status**: Ready for testing. CSP now allows https://apis.google.com and https://accounts.google.com for scripts/connect/frame.
+## TS Error Fix
+✅ **Step 1**: Create TODO (done)
+⏳ **Step 2**: Add 'loading' to useCurrentUser.ts  
+⏳ **Step 3**: Commit/push  
+⏳ **Step 4**: Test DenemeDers.tsx
 
+**Next**: Edit hook now.
