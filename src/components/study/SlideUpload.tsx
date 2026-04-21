@@ -294,19 +294,19 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
             console.error('Failed to upload image:', uploadError);
             toast({
               title: "Görsel yükleme hatası",
-              description: `${slide.title} görseli yüklenemedi, metin olarak kaydedilecek.`,
+              description: `${slide.title} görseli buluta yüklenemedi, yerel olarak kaydedildi.`,
               variant: "destructive",
             });
-            imageUrl = ''; // Fallback to text-only
+            // Keep original base64 data URL since Blossom upload failed
           }
         } else if (imageUrl && imageUrl.startsWith('data:image') && !user) {
           // User not logged in, cannot upload to Blossom
           toast({
             title: "Giriş gerekli",
-            description: "Görselleri yüklemek için giriş yapmalısınız. Şimdilik metin olarak kaydedilecek.",
+            description: "Görselleri yüklemek için giriş yapmalısınız. Yerel olarak kaydedildi.",
             variant: "destructive",
           });
-          imageUrl = '';
+          // Keep original base64 data URL
         }
         
         await addSlide(subjectId, { ...slide, imageUrl });
