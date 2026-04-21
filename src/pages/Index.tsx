@@ -2,7 +2,7 @@ import { useSeoMeta } from '@unhead/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Flame, Target, Brain, Calendar, BarChart3, Zap, ChevronRight, Upload } from 'lucide-react';
+import { BookOpen, Flame, Target, Brain, Calendar, BarChart3, Zap, ChevronRight, Upload, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useStudyApp } from '@/contexts/StudyAppContext';
@@ -102,6 +102,15 @@ const Index = () => {
                 >
                   Başla
                   <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={() => navigate('/settings')}
+                  className="text-white border-white hover:bg-white hover:text-indigo-600"
+                >
+                  <Settings className="mr-2 h-5 w-5" />
+                  Ayarlar
                 </Button>
               </div>
             </div>
