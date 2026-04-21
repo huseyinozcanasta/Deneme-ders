@@ -1,0 +1,132 @@
+# Queries for Study App DataConnect
+
+# Get user profile with all related data
+query GetUserProfile($userId: String!) {
+  user_by_id(id: $userId) {
+    id
+    preferences
+    totalStudyTime
+    totalSessions
+    quizzesCompleted
+    averageQuizScore
+    streakDays
+    lastStudyDate
+    createdAt
+    updatedAt
+  }
+}
+
+# Get all subjects for a user
+query GetUserSubjects($userId: String!) {
+  user_by_id(id: $userId) {
+    subjects {
+      id
+      name
+      description
+      color
+      slideCount
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+# Get all quizzes for a user
+query GetUserQuizzes($userId: String!) {
+  user_by_id(id: $userId) {
+    quizzes {
+      id
+      subject {
+        id
+        name
+        color
+      }
+      title
+      questions
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+# Get all study plans for a user
+query GetUserStudyPlans($userId: String!) {
+  user_by_id(id: $userId) {
+    studyPlans(orderBy: {date: ASC}) {
+      id
+      subject {
+        id
+        name
+        color
+      }
+      date
+      taskType
+      taskId
+      completed
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+# Get all spaced repetition cards for a user
+query GetUserSpacedCards($userId: String!) {
+  user_by_id(id: $userId) {
+    spacedRepetitionCards(orderBy: {nextReviewDate: ASC}) {
+      id
+      subject {
+        id
+        name
+        color
+      }
+      question
+      answer
+      easeFactor
+      interval
+      nextReviewDate
+      reviewCount
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+# Get all study sessions for a user
+query GetUserStudySessions($userId: String!) {
+  user_by_id(id: $userId) {
+    studySessions(orderBy: {startTime: DESC}) {
+      id
+      subject {
+        id
+        name
+        color
+      }
+      type
+      startTime
+      endTime
+      completed
+      duration
+      createdAt
+    }
+  }
+}
+
+# Get cards due for review today
+query GetDueCards($userId: String!, $today: Date!) {
+  user_by_id(id: $userId) {
+    spacedRepetitionCards(filter: {nextReviewDate: {lte: $today}}) {
+      id
+      subject {
+        id
+        name
+        color
+      }
+      question
+      answer
+      easeFactor
+      interval
+      nextReviewDate
+      reviewCount
+    }
+  }
+}

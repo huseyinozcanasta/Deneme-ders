@@ -1,0 +1,174 @@
+# Mutations for Study App DataConnect
+
+# Create or update user profile
+mutation UpsertUser($input: UserUpsertInput!) {
+  user_upsert(input: $input) {
+    id
+    preferences
+    totalStudyTime
+    totalSessions
+    quizzesCompleted
+    averageQuizScore
+    streakDays
+    lastStudyDate
+    updatedAt
+  }
+}
+
+# Create a new subject
+mutation CreateSubject($input: SubjectInsertInput!) {
+  subject_insert(input: $input) {
+    id
+    name
+    description
+    color
+    slideCount
+    createdAt
+    updatedAt
+  }
+}
+
+# Update an existing subject
+mutation UpdateSubject($id: String!, $updates: SubjectUpdateInput!) {
+  subject_update(id: $id, updates: $updates) {
+    id
+    name
+    description
+    color
+    slideCount
+    updatedAt
+  }
+}
+
+# Delete a subject
+mutation DeleteSubject($id: String!) {
+  subject_delete(id: $id)
+}
+
+# Create a new quiz
+mutation CreateQuiz($input: QuizInsertInput!) {
+  quiz_insert(input: $input) {
+    id
+    subject {
+      id
+      name
+    }
+    title
+    questions
+    createdAt
+    updatedAt
+  }
+}
+
+# Update an existing quiz
+mutation UpdateQuiz($id: String!, $updates: QuizUpdateInput!) {
+  quiz_update(id: $id, updates: $updates) {
+    id
+    title
+    questions
+    updatedAt
+  }
+}
+
+# Delete a quiz
+mutation DeleteQuiz($id: String!) {
+  quiz_delete(id: $id)
+}
+
+# Create a new study plan
+mutation CreateStudyPlan($input: StudyPlanInsertInput!) {
+  studyPlan_insert(input: $input) {
+    id
+    subject {
+      id
+      name
+    }
+    date
+    taskType
+    taskId
+    completed
+    createdAt
+    updatedAt
+  }
+}
+
+# Update a study plan
+mutation UpdateStudyPlan($id: String!, $updates: StudyPlanUpdateInput!) {
+  studyPlan_update(id: $id, updates: $updates) {
+    id
+    completed
+    updatedAt
+  }
+}
+
+# Delete a study plan
+mutation DeleteStudyPlan($id: String!) {
+  studyPlan_delete(id: $id)
+}
+
+# Create a new spaced repetition card
+mutation CreateSpacedCard($input: SpacedRepetitionCardInsertInput!) {
+  spacedRepetitionCard_insert(input: $input) {
+    id
+    subject {
+      id
+      name
+    }
+    question
+    answer
+    easeFactor
+    interval
+    nextReviewDate
+    reviewCount
+    createdAt
+    updatedAt
+  }
+}
+
+# Update a spaced repetition card (after review)
+mutation UpdateSpacedCard($id: String!, $updates: SpacedRepetitionCardUpdateInput!) {
+  spacedRepetitionCard_update(id: $id, updates: $updates) {
+    id
+    easeFactor
+    interval
+    nextReviewDate
+    reviewCount
+    updatedAt
+  }
+}
+
+# Delete a spaced repetition card
+mutation DeleteSpacedCard($id: String!) {
+  spacedRepetitionCard_delete(id: $id)
+}
+
+# Create a new study session
+mutation CreateStudySession($input: StudySessionInsertInput!) {
+  studySession_insert(input: $input) {
+    id
+    subject {
+      id
+      name
+    }
+    type
+    startTime
+    completed
+    createdAt
+  }
+}
+
+# Update a study session (complete it)
+mutation UpdateStudySession($id: String!, $updates: StudySessionUpdateInput!) {
+  studySession_update(id: $id, updates: $updates) {
+    id
+    endTime
+    completed
+    duration
+    updatedAt
+  }
+}
+
+# Delete a study session
+mutation DeleteStudySession($id: String!) {
+  studySession_delete(id: $id)
+}

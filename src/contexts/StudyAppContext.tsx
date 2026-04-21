@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFirebaseSync } from '@/hooks/useFirebaseSync';
 import type { 
   StudyAppState, 
   Subject, 
@@ -28,22 +30,28 @@ const initialState: StudyAppState = {
   stats: initialStats,
 };
 
+// Local-only state for slides
+interface LocalSlideState {
+  [subjectId: string]: Slide[];
+}
+
 interface StudyAppContextType {
   state: StudyAppState;
-  addSubject: (name: string, description?: string, color?: string) => Subject;
-  addSlide: (subjectId: string, slide: Omit<Slide, 'id'>) => Slide;
-  updateSlide: (subjectId: string, slideId: string, updates: Partial<Slide>) => void;
+  addSubject: (name: string, description?: string, color?: string) => Promise<Subject>;
+  addSlide: (subjectId: string, slide: Omit<Slide, 'id'>) => Promise<Slide>;
+  updateSlide: (subjectId: string, slideId: string, updates: Partial<Slide>) => Promise<void>;
   deleteSlide: (subjectId: string, slideId: string) => void;
-  addQuiz: (subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]) => Quiz;
-  addStudyPlan: (subjectId: string, date: number, taskType: StudyPlan['taskType'], taskId?: string) => StudyPlan;
-  toggleStudyPlan: (planId: string) => void;
-  addStudySession: (subjectId: string, type: StudySession['type']) => StudySession;
-  completeSession: (sessionId: string, duration: number) => void;
-  addSpacedCard: (subjectId: string, question: string, answer: string) => SpacedRepetitionCard;
-  reviewSpacedCard: (cardId: string, quality: number) => void;
-  deleteSubject: (subjectId: string) => void;
-  deleteQuiz: (quizId: string) => void;
+  addQuiz: (subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]) => Promise<Quiz>;
+  addStudyPlan: (subjectId: string, date: number, taskType: StudyPlan['taskType'], taskId?: string) => Promise<StudyPlan>;
+  toggleStudyPlan: (planId: string) => Promise<void>;
+  addStudySession: (subjectId: string, type: StudySession['type']) => Promise<StudySession>;
+  completeSession: (sessionId: string, duration: number) => Promise<void>;
+  addSpacedCard: (subjectId: string, question: string, answer: string) => Promise<SpacedRepetitionCard>;
+  reviewSpacedCard: (cardId: string, quality: number) => Promise<void>;
+  deleteSubject: (subjectId: string) => Promise<void>;
+  deleteQuiz: (quizId: string) => Promise<void>;
   isStorageReady: boolean;
+  isFirebaseSynced: boolean;
 }
 
 const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined);
@@ -138,15 +146,32 @@ async function compressImage(dataUrl: string, quality = 0.6): Promise<string> {
 }
 
 export function StudyAppProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const firebaseSync = useFirebaseSync();
   const [state, setState] = useState<StudyAppState>(initialState);
+  const [localSlideState, setLocalSlideState] = useState<LocalSlideState>({});
   const [isStorageReady, setIsStorageReady] = useState(false);
+  const [isFirebaseSynced, setIsFirebaseSynced] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
 
-  // Load from IndexedDB on mount
+  // Load from IndexedDB on mount (slides only)
   useEffect(() => {
     loadFromIndexedDB()
       .then((savedState) => {
-        setState(savedState);
+        // Extract slides and store them locally
+        const slidesBySubject: LocalSlideState = {};
+        savedState.subjects.forEach(subject => {
+          if (subject.slides.length > 0) {
+            slidesBySubject[subject.id] = subject.slides;
+          }
+        });
+        setLocalSlideState(slidesBySubject);
+        
+        // Set initial state without slides (they'll come from Firebase)
+        setState(prev => ({
+          ...prev,
+          subjects: savedState.subjects.map(s => ({ ...s, slides: [] }))
+        }));
         setIsStorageReady(true);
       })
       .catch((error) => {
@@ -155,7 +180,57 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  // Debounced save to IndexedDB
+  // Sync with Firebase when user is authenticated
+  useEffect(() => {
+    if (!user || !isStorageReady) return;
+
+    const syncData = async () => {
+      try {
+        // Wait for Firebase data to load
+        const promises: Promise<any>[] = [];
+        if (firebaseSync.subjects) promises.push(Promise.resolve(firebaseSync.subjects));
+        if (firebaseSync.quizzes) promises.push(Promise.resolve(firebaseSync.quizzes));
+        if (firebaseSync.studyPlans) promises.push(Promise.resolve(firebaseSync.studyPlans));
+        if (firebaseSync.spacedCards) promises.push(Promise.resolve(firebaseSync.spacedCards));
+        if (firebaseSync.studySessions) promises.push(Promise.resolve(firebaseSync.studySessions));
+        if (firebaseSync.userProfile) promises.push(Promise.resolve(firebaseSync.userProfile));
+        
+        const [fbSubjects, fbQuizzes, fbStudyPlans, fbSpacedCards, fbStudySessions, fbUserProfile] = await Promise.all(promises);
+
+        // Convert Firebase data to local format
+        const convertedSubjects = fbSubjects?.map(firebaseSync.convertSubjectFromFirebase) || [];
+        const convertedQuizzes = fbQuizzes?.map(firebaseSync.convertQuizFromFirebase) || [];
+        const convertedStudyPlans = fbStudyPlans?.map(firebaseSync.convertStudyPlanFromFirebase) || [];
+        const convertedSpacedCards = fbSpacedCards?.map(firebaseSync.convertSpacedCardFromFirebase) || [];
+        const convertedStudySessions = fbStudySessions?.map(firebaseSync.convertStudySessionFromFirebase) || [];
+        const convertedStats = fbUserProfile ? firebaseSync.convertStatsFromFirebase(fbUserProfile) : initialStats;
+
+        // Merge with local slides
+        const subjectsWithSlides = convertedSubjects.map(subject => ({
+          ...subject,
+          slides: localSlideState[subject.id] || []
+        }));
+
+        setState({
+          subjects: subjectsWithSlides,
+          quizzes: convertedQuizzes,
+          studyPlans: convertedStudyPlans,
+          spacedCards: convertedSpacedCards,
+          studySessions: convertedStudySessions,
+          stats: convertedStats,
+        });
+
+        setIsFirebaseSynced(true);
+      } catch (error) {
+        console.error('Failed to sync with Firebase:', error);
+        setIsFirebaseSynced(false);
+      }
+    };
+
+    syncData();
+  }, [user, isStorageReady, firebaseSync, localSlideState]);
+
+  // Debounced save to IndexedDB (slides only)
   useEffect(() => {
     if (!isStorageReady) return;
     
@@ -163,7 +238,15 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     const timeoutId = setTimeout(async () => {
       if (pendingSave) {
         try {
-          await saveToIndexedDB(state);
+          // Save only slides to IndexedDB
+          const stateWithSlides = {
+            ...state,
+            subjects: state.subjects.map(subject => ({
+              ...subject,
+              slides: localSlideState[subject.id] || []
+            }))
+          };
+          await saveToIndexedDB(stateWithSlides);
         } catch (error) {
           console.error('Failed to save to IndexedDB:', error);
         }
@@ -172,20 +255,51 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     }, 500); // Debounce saves
 
     return () => clearTimeout(timeoutId);
-  }, [state, isStorageReady]);
+  }, [state, localSlideState, isStorageReady]);
 
-  const addSubject = useCallback((name: string, description?: string, color = '#6366f1'): Subject => {
-    const subject: Subject = {
-      id: generateId(),
-      name,
-      description,
-      color,
-      slides: [],
-      createdAt: Date.now(),
-    };
-    setState(prev => ({ ...prev, subjects: [...prev.subjects, subject] }));
-    return subject;
-  }, []);
+  const addSubject = useCallback(async (name: string, description?: string, color = '#6366f1'): Promise<Subject> => {
+    if (!user) {
+      // Fallback to local-only mode
+      const subject: Subject = {
+        id: generateId(),
+        name,
+        description,
+        color,
+        slides: [],
+        createdAt: Date.now(),
+      };
+      setState(prev => ({ ...prev, subjects: [...prev.subjects, subject] }));
+      return subject;
+    }
+
+    try {
+      const subjectData = {
+        name,
+        description: description || undefined,
+        color,
+        createdAt: Date.now(),
+      };
+      
+      const result = await firebaseSync.createSubjectMutation.mutateAsync(subjectData);
+      const subject = firebaseSync.convertSubjectFromFirebase(result);
+      
+      setState(prev => ({ ...prev, subjects: [...prev.subjects, { ...subject, slides: [] }] }));
+      return subject;
+    } catch (error) {
+      console.error('Failed to create subject in Firebase:', error);
+      // Fallback to local
+      const subject: Subject = {
+        id: generateId(),
+        name,
+        description,
+        color,
+        slides: [],
+        createdAt: Date.now(),
+      };
+      setState(prev => ({ ...prev, subjects: [...prev.subjects, subject] }));
+      return subject;
+    }
+  }, [user, firebaseSync]);
 
   const addSlide = useCallback(async (subjectId: string, slide: Omit<Slide, 'id'>): Promise<Slide> => {
     const newSlide: Slide = { ...slide, id: generateId() };
@@ -195,12 +309,20 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       newSlide.imageUrl = await compressImage(newSlide.imageUrl, 0.6);
     }
     
+    // Store slide locally only
+    setLocalSlideState(prev => ({
+      ...prev,
+      [subjectId]: [...(prev[subjectId] || []), newSlide]
+    }));
+    
+    // Update state to reflect the new slide
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.map(s => 
-        s.id === subjectId ? { ...s, slides: [...s.slides, newSlide] } : s
+        s.id === subjectId ? { ...s, slides: [...(s.slides || []), newSlide] } : s
       ),
     }));
+    
     return newSlide;
   }, []);
 
@@ -214,155 +336,359 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       };
     }
     
+    // Update local slide storage
+    setLocalSlideState(prev => ({
+      ...prev,
+      [subjectId]: (prev[subjectId] || []).map(sl => 
+        sl.id === slideId ? { ...sl, ...processedUpdates } : sl
+      )
+    }));
+    
+    // Update state to reflect the change
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.map(s => 
         s.id === subjectId ? {
           ...s,
-          slides: s.slides.map(sl => sl.id === slideId ? { ...sl, ...processedUpdates } : sl)
+          slides: (s.slides || []).map(sl => sl.id === slideId ? { ...sl, ...processedUpdates } : sl)
         } : s
       ),
     }));
   }, []);
 
   const deleteSlide = useCallback((subjectId: string, slideId: string) => {
+    // Update local slide storage
+    setLocalSlideState(prev => ({
+      ...prev,
+      [subjectId]: (prev[subjectId] || []).filter(sl => sl.id !== slideId)
+    }));
+    
+    // Update state to reflect the deletion
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.map(s => 
-        s.id === subjectId ? { ...s, slides: s.slides.filter(sl => sl.id !== slideId) } : s
+        s.id === subjectId ? { ...s, slides: (s.slides || []).filter(sl => sl.id !== slideId) } : s
       ),
     }));
   }, []);
 
-  const addQuiz = useCallback((subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]): Quiz => {
-    const quiz: Quiz = {
-      id: generateId(),
-      subjectId,
-      title,
-      questions: questions.map(q => ({ ...q, id: generateId() })),
-      createdAt: Date.now(),
-    };
-    setState(prev => ({ ...prev, quizzes: [...prev.quizzes, quiz] }));
-    return quiz;
-  }, []);
+  const addQuiz = useCallback(async (subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]): Promise<Quiz> => {
+    if (!user) {
+      // Fallback to local-only mode
+      const quiz: Quiz = {
+        id: generateId(),
+        subjectId,
+        title,
+        questions: questions.map(q => ({ ...q, id: generateId() })),
+        createdAt: Date.now(),
+      };
+      setState(prev => ({ ...prev, quizzes: [...prev.quizzes, quiz] }));
+      return quiz;
+    }
 
-  const addStudyPlan = useCallback((subjectId: string, date: number, taskType: StudyPlan['taskType'], taskId?: string): StudyPlan => {
-    const plan: StudyPlan = {
-      id: generateId(),
-      subjectId,
-      date,
-      taskType,
-      taskId,
-      completed: false,
-    };
-    setState(prev => ({ ...prev, studyPlans: [...prev.studyPlans, plan] }));
-    return plan;
-  }, []);
+    try {
+      const quizData = {
+        subjectId,
+        title,
+        questions: questions.map(q => ({ ...q, id: generateId() })),
+        createdAt: Date.now(),
+      };
+      
+      const result = await firebaseSync.createQuizMutation.mutateAsync(quizData);
+      const quiz = firebaseSync.convertQuizFromFirebase(result);
+      
+      setState(prev => ({ ...prev, quizzes: [...prev.quizzes, quiz] }));
+      return quiz;
+    } catch (error) {
+      console.error('Failed to create quiz in Firebase:', error);
+      // Fallback to local
+      const quiz: Quiz = {
+        id: generateId(),
+        subjectId,
+        title,
+        questions: questions.map(q => ({ ...q, id: generateId() })),
+        createdAt: Date.now(),
+      };
+      setState(prev => ({ ...prev, quizzes: [...prev.quizzes, quiz] }));
+      return quiz;
+    }
+  }, [user, firebaseSync]);
 
-  const toggleStudyPlan = useCallback((planId: string) => {
+  const addStudyPlan = useCallback(async (subjectId: string, date: number, taskType: StudyPlan['taskType'], taskId?: string): Promise<StudyPlan> => {
+    if (!user) {
+      // Fallback to local-only mode
+      const plan: StudyPlan = {
+        id: generateId(),
+        subjectId,
+        date,
+        taskType,
+        taskId,
+        completed: false,
+      };
+      setState(prev => ({ ...prev, studyPlans: [...prev.studyPlans, plan] }));
+      return plan;
+    }
+
+    try {
+      const planData = {
+        subjectId,
+        date,
+        taskType,
+        taskId: taskId || undefined,
+        completed: false,
+      };
+      
+      const result = await firebaseSync.createStudyPlanMutation.mutateAsync(planData);
+      const plan = firebaseSync.convertStudyPlanFromFirebase(result);
+      
+      setState(prev => ({ ...prev, studyPlans: [...prev.studyPlans, plan] }));
+      return plan;
+    } catch (error) {
+      console.error('Failed to create study plan in Firebase:', error);
+      // Fallback to local
+      const plan: StudyPlan = {
+        id: generateId(),
+        subjectId,
+        date,
+        taskType,
+        taskId,
+        completed: false,
+      };
+      setState(prev => ({ ...prev, studyPlans: [...prev.studyPlans, plan] }));
+      return plan;
+    }
+  }, [user, firebaseSync]);
+
+  const toggleStudyPlan = useCallback(async (planId: string) => {
+    const plan = state.studyPlans.find(p => p.id === planId);
+    if (!plan) return;
+
+    const updatedPlan = { ...plan, completed: !plan.completed };
+
+    if (user) {
+      try {
+        await firebaseSync.updateStudyPlanMutation.mutateAsync({ 
+          id: planId, 
+          updates: { completed: updatedPlan.completed } 
+        });
+      } catch (error) {
+        console.error('Failed to update study plan in Firebase:', error);
+      }
+    }
+
     setState(prev => ({
       ...prev,
       studyPlans: prev.studyPlans.map(p => 
-        p.id === planId ? { ...p, completed: !p.completed } : p
+        p.id === planId ? updatedPlan : p
       ),
     }));
-  }, []);
+  }, [user, firebaseSync, state.studyPlans]);
 
-  const addStudySession = useCallback((subjectId: string, type: StudySession['type']): StudySession => {
-    const session: StudySession = {
-      id: generateId(),
-      subjectId,
-      type,
-      startTime: Date.now(),
-      completed: false,
-    };
-    setState(prev => ({ ...prev, studySessions: [...prev.studySessions, session] }));
-    return session;
-  }, []);
-
-  const completeSession = useCallback((sessionId: string, duration: number) => {
-    setState(prev => {
-      const now = Date.now();
-      const lastStudyDate = prev.stats.lastStudyDate;
-      const dayInMs = 24 * 60 * 60 * 1000;
-      const yesterday = now - dayInMs;
-      
-      let streakDays = prev.stats.streakDays;
-      if (!lastStudyDate || lastStudyDate < yesterday) {
-        if (lastStudyDate && lastStudyDate >= yesterday) {
-          streakDays = prev.stats.streakDays + 1;
-        } else {
-          streakDays = 1;
-        }
-      }
-
-      return {
-        ...prev,
-        studySessions: prev.studySessions.map(s => 
-          s.id === sessionId ? { ...s, endTime: now, completed: true } : s
-        ),
-        stats: {
-          ...prev.stats,
-          totalStudyTime: prev.stats.totalStudyTime + duration,
-          totalSessions: prev.stats.totalSessions + 1,
-          streakDays,
-          lastStudyDate: now,
-        },
+  const addStudySession = useCallback(async (subjectId: string, type: StudySession['type']): Promise<StudySession> => {
+    if (!user) {
+      // Fallback to local-only mode
+      const session: StudySession = {
+        id: generateId(),
+        subjectId,
+        type,
+        startTime: Date.now(),
+        completed: false,
       };
-    });
-  }, []);
+      setState(prev => ({ ...prev, studySessions: [...prev.studySessions, session] }));
+      return session;
+    }
 
-  const addSpacedCard = useCallback((subjectId: string, question: string, answer: string): SpacedRepetitionCard => {
-    const card: SpacedRepetitionCard = {
-      id: generateId(),
-      subjectId,
-      question,
-      answer,
-      easeFactor: 2.5,
-      interval: 1,
-      nextReviewDate: Date.now(),
-      reviewCount: 0,
+    try {
+      const sessionData = {
+        subjectId,
+        type,
+        startTime: Date.now(),
+        completed: false,
+      };
+      
+      const result = await firebaseSync.createStudySessionMutation.mutateAsync(sessionData);
+      const session = firebaseSync.convertStudySessionFromFirebase(result);
+      
+      setState(prev => ({ ...prev, studySessions: [...prev.studySessions, session] }));
+      return session;
+    } catch (error) {
+      console.error('Failed to create study session in Firebase:', error);
+      // Fallback to local
+      const session: StudySession = {
+        id: generateId(),
+        subjectId,
+        type,
+        startTime: Date.now(),
+        completed: false,
+      };
+      setState(prev => ({ ...prev, studySessions: [...prev.studySessions, session] }));
+      return session;
+    }
+  }, [user, firebaseSync]);
+
+  const completeSession = useCallback(async (sessionId: string, duration: number) => {
+    const now = Date.now();
+    const session = state.studySessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    const lastStudyDate = state.stats.lastStudyDate;
+    const dayInMs = 24 * 60 * 60 * 1000;
+    const yesterday = now - dayInMs;
+    
+    let streakDays = state.stats.streakDays;
+    if (!lastStudyDate || lastStudyDate < yesterday) {
+      if (lastStudyDate && lastStudyDate >= yesterday) {
+        streakDays = state.stats.streakDays + 1;
+      } else {
+        streakDays = 1;
+      }
+    }
+
+    const updatedSession = { ...session, endTime: now, completed: true };
+    const updatedStats = {
+      ...state.stats,
+      totalStudyTime: state.stats.totalStudyTime + duration,
+      totalSessions: state.stats.totalSessions + 1,
+      streakDays,
+      lastStudyDate: now,
     };
-    setState(prev => ({ ...prev, spacedCards: [...prev.spacedCards, card] }));
-    return card;
-  }, []);
 
-  const reviewSpacedCard = useCallback((cardId: string, quality: number) => {
+    if (user) {
+      try {
+        await firebaseSync.updateStudySessionMutation.mutateAsync({ 
+          id: sessionId, 
+          updates: updatedSession 
+        });
+        await firebaseSync.upsertUserMutation.mutateAsync(updatedStats);
+      } catch (error) {
+        console.error('Failed to update session/stats in Firebase:', error);
+      }
+    }
+
     setState(prev => ({
       ...prev,
-      spacedCards: prev.spacedCards.map(card => {
-        if (card.id !== cardId) return card;
-
-        let { easeFactor, interval } = card;
-        
-        if (quality >= 3) {
-          if (card.reviewCount === 0) {
-            interval = 1;
-          } else if (card.reviewCount === 1) {
-            interval = 6;
-          } else {
-            interval = Math.round(interval * easeFactor);
-          }
-        } else {
-          interval = 1;
-        }
-
-        easeFactor = Math.max(1.3, easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
-
-        const nextReviewDate = Date.now() + interval * 24 * 60 * 60 * 1000;
-
-        return {
-          ...card,
-          easeFactor,
-          interval,
-          nextReviewDate,
-          reviewCount: card.reviewCount + 1,
-        };
-      }),
+      studySessions: prev.studySessions.map(s => 
+        s.id === sessionId ? updatedSession : s
+      ),
+      stats: updatedStats,
     }));
-  }, []);
+  }, [user, firebaseSync, state.studySessions, state.stats]);
 
-  const deleteSubject = useCallback((subjectId: string) => {
+  const addSpacedCard = useCallback(async (subjectId: string, question: string, answer: string): Promise<SpacedRepetitionCard> => {
+    if (!user) {
+      // Fallback to local-only mode
+      const card: SpacedRepetitionCard = {
+        id: generateId(),
+        subjectId,
+        question,
+        answer,
+        easeFactor: 2.5,
+        interval: 1,
+        nextReviewDate: Date.now(),
+        reviewCount: 0,
+      };
+      setState(prev => ({ ...prev, spacedCards: [...prev.spacedCards, card] }));
+      return card;
+    }
+
+    try {
+      const cardData = {
+        subjectId,
+        question,
+        answer,
+        easeFactor: 2.5,
+        interval: 1,
+        nextReviewDate: Date.now(),
+        reviewCount: 0,
+      };
+      
+      const result = await firebaseSync.createSpacedCardMutation.mutateAsync(cardData);
+      const card = firebaseSync.convertSpacedCardFromFirebase(result);
+      
+      setState(prev => ({ ...prev, spacedCards: [...prev.spacedCards, card] }));
+      return card;
+    } catch (error) {
+      console.error('Failed to create spaced card in Firebase:', error);
+      // Fallback to local
+      const card: SpacedRepetitionCard = {
+        id: generateId(),
+        subjectId,
+        question,
+        answer,
+        easeFactor: 2.5,
+        interval: 1,
+        nextReviewDate: Date.now(),
+        reviewCount: 0,
+      };
+      setState(prev => ({ ...prev, spacedCards: [...prev.spacedCards, card] }));
+      return card;
+    }
+  }, [user, firebaseSync]);
+
+  const reviewSpacedCard = useCallback(async (cardId: string, quality: number) => {
+    const card = state.spacedCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    let { easeFactor, interval } = card;
+    
+    if (quality >= 3) {
+      if (card.reviewCount === 0) {
+        interval = 1;
+      } else if (card.reviewCount === 1) {
+        interval = 6;
+      } else {
+        interval = Math.round(interval * easeFactor);
+      }
+    } else {
+      interval = 1;
+    }
+
+    easeFactor = Math.max(1.3, easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
+
+    const nextReviewDate = Date.now() + interval * 24 * 60 * 60 * 1000;
+    const updatedCard = {
+      ...card,
+      easeFactor,
+      interval,
+      nextReviewDate,
+      reviewCount: card.reviewCount + 1,
+    };
+
+    if (user) {
+      try {
+        await firebaseSync.updateSpacedCardMutation.mutateAsync({ 
+          id: cardId, 
+          updates: updatedCard 
+        });
+      } catch (error) {
+        console.error('Failed to update spaced card in Firebase:', error);
+      }
+    }
+
+    setState(prev => ({
+      ...prev,
+      spacedCards: prev.spacedCards.map(c => 
+        c.id === cardId ? updatedCard : c
+      ),
+    }));
+  }, [user, firebaseSync, state.spacedCards]);
+
+  const deleteSubject = useCallback(async (subjectId: string) => {
+    if (user) {
+      try {
+        await firebaseSync.deleteSubjectMutation.mutateAsync(subjectId);
+      } catch (error) {
+        console.error('Failed to delete subject from Firebase:', error);
+      }
+    }
+
+    // Also clean up local slides
+    setLocalSlideState(prev => {
+      const newState = { ...prev };
+      delete newState[subjectId];
+      return newState;
+    });
+
     setState(prev => ({
       ...prev,
       subjects: prev.subjects.filter(s => s.id !== subjectId),
@@ -370,14 +696,22 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       studyPlans: prev.studyPlans.filter(p => p.subjectId !== subjectId),
       spacedCards: prev.spacedCards.filter(c => c.subjectId !== subjectId),
     }));
-  }, []);
+  }, [user, firebaseSync]);
 
-  const deleteQuiz = useCallback((quizId: string) => {
+  const deleteQuiz = useCallback(async (quizId: string) => {
+    if (user) {
+      try {
+        await firebaseSync.deleteQuizMutation.mutateAsync(quizId);
+      } catch (error) {
+        console.error('Failed to delete quiz from Firebase:', error);
+      }
+    }
+
     setState(prev => ({
       ...prev,
       quizzes: prev.quizzes.filter(q => q.id !== quizId),
     }));
-  }, []);
+  }, [user, firebaseSync]);
 
   return (
     <StudyAppContext.Provider value={{
@@ -396,6 +730,7 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       deleteSubject,
       deleteQuiz,
       isStorageReady,
+      isFirebaseSynced,
     }}>
       {children}
     </StudyAppContext.Provider>
