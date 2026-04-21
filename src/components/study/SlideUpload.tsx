@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File, AlertCircle, CloudUpload } from 'lucide-react';
+import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File as FileIcon, AlertCircle, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -268,11 +268,17 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
             const response = await fetch(imageUrl);
             const blob = await response.blob();
             const fileName = `${slide.title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.jpg`;
+            // Create File from blob using a different approach
             const imageFile = new File([blob], fileName, { type: 'image/jpeg' });
             
             // Upload to Blossom
-            const [[_, url]] = await uploadFile(imageFile);
-            imageUrl = url; // Use the Blossom URL instead of local data URL
+            const tags = await uploadFile(imageFile);
+            const url = tags.find(tag => tag[0] === 'url')?.[1];
+            if (url) {
+              imageUrl = url; // Use the Blossom URL instead of local data URL
+            } else {
+              throw new Error('No URL returned from upload');
+            }
           } catch (uploadError) {
             console.error('Failed to upload image:', uploadError);
             toast({
@@ -297,11 +303,22 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
       
       setSlides([]);
       setProcessingStatus('');
-      onComplete?.();
       
       toast({
         title: "Başarılı",
         description: `${totalSlides} slayt kaydedildi!`,
+      });
+      
+      // Redirect to study mode after successful save
+      setTimeout(() => {
+        window.location.href = `/subject/${subjectId}?view=study`;
+      }, 1000);
+    } catch (error) {
+      console.error('Error saving slides:', error);
+      toast({
+        title: "Hata",
+        description: "Slaytlar kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive",
       });
     } finally {
       setIsSaving(false);
@@ -391,7 +408,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2 p-3 border rounded-lg">
                       <div className="h-8 w-8 rounded bg-red-100 dark:bg-red-950/30 flex items-center justify-center">
-                        <File className="h-4 w-4 text-red-600" />
+                        <FileIcon className="h-4 w-4 text-red-600" />
                       </div>
                       <div>
                         <p className="font-medium">PDF</p>
