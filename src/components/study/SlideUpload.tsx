@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File as FileIcon, AlertCircle, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
   const { addSlide } = useStudyApp();
   const { toast } = useToast();
   const { mutateAsync: uploadFile } = useUploadFile();
+  const navigate = useNavigate();
   const { user } = useCurrentUser();
   const [isSaving, setIsSaving] = useState(false);
   const [slides, setSlides] = useState<Omit<Slide, 'id'>[]>([]);
@@ -311,7 +313,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
       
       // Redirect to study mode after successful save
       setTimeout(() => {
-        window.location.href = `/subject/${subjectId}?view=study`;
+        navigate(`/subject/${subjectId}?view=study`);
       }, 1000);
     } catch (error) {
       console.error('Error saving slides:', error);
