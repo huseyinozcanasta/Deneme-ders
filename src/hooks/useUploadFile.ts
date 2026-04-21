@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { BlossomUploader } from '@nostrify/nostrify/uploaders';
-
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage, auth } from '@/lib/firebase';
 import { useCurrentUser } from "./useCurrentUser";
 
 export function useUploadFile() {
@@ -12,19 +12,21 @@ export function useUploadFile() {
         throw new Error('Must be logged in to upload files');
       }
 
-      if (!('signer' in user) || !user.signer) {
-        throw new Error('Nostr signer required for image upload. Please log in with a Nostr extension.');
+      const userFirebase = auth.currentUser;
+      if (!userFirebase) {
+        throw new Error('Firebase user not found');
       }
 
-      const uploader = new BlossomUploader({
-        servers: [
-          'https://blossom.primal.net/',
-        ],
-        signer: (user as any).signer,
-      });
+      // Firebase Storage upload path: images/{uid}/{filename}
+      const filePath = `images/${userFirebase.uid}/${file.name}`;
+      const storageRef = ref(storage, filePath);
 
-      const tags = await uploader.upload(file);
-      return tags;
+      // Upload file
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+
+      // Return Nostr-compatible tag format: [['url', downloadURL]]
+      return [['url', url]];
     },
   });
 }
