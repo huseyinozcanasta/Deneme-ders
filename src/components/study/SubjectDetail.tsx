@@ -39,7 +39,7 @@ export function SubjectDetail() {
 
   useEffect(() => {
     if (!subject && id) {
-      navigate('/');
+      navigate('/home');
     }
   }, [subject, id, navigate]);
 
@@ -84,7 +84,7 @@ export function SubjectDetail() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/home')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

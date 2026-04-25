@@ -219,19 +219,26 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         const convertedStudySessions = fbStudySessions?.map(firebaseSync.convertStudySessionFromFirebase) || [];
         const convertedStats = fbUserProfile ? firebaseSync.convertStatsFromFirebase(fbUserProfile) : initialStats;
 
-        // Merge with local slides
-        const subjectsWithSlides = convertedSubjects.map(subject => ({
-          ...subject,
-          slides: localSlideState[subject.id] || []
-        }));
+        // Merge with local slides using ref to avoid dependency cycle
+        setState(prev => {
+          const subjectsWithSlides = convertedSubjects.map(subject => ({
+            ...subject,
+            slides: localSlideState[subject.id] || []
+          }));
 
-        setState({
-          subjects: subjectsWithSlides,
-          quizzes: convertedQuizzes,
-          studyPlans: convertedStudyPlans,
-          spacedCards: convertedSpacedCards,
-          studySessions: convertedStudySessions,
-          stats: convertedStats,
+          // Preserve any subjects that exist locally but not in Firebase yet
+          // (prevents race condition during slide upload)
+          const existingSubjectIds = new Set(convertedSubjects.map((s: any) => s.id));
+          const localOnlySubjects = prev.subjects.filter(s => !existingSubjectIds.has(s.id));
+
+          return {
+            subjects: [...subjectsWithSlides, ...localOnlySubjects],
+            quizzes: convertedQuizzes,
+            studyPlans: convertedStudyPlans,
+            spacedCards: convertedSpacedCards,
+            studySessions: convertedStudySessions,
+            stats: convertedStats,
+          };
         });
 
         setIsFirebaseSynced(true);
@@ -248,7 +255,10 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [user, isStorageReady, localSlideState]);
+  // NOTE: localSlideState is intentionally NOT in dependencies
+  // to prevent race conditions during slide uploads
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isStorageReady, firebaseSync]);
 
   // Debounced save to IndexedDB (slides only)
   const pendingSaveRef = useRef(pendingSave);
