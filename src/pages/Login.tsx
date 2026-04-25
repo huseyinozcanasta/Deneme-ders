@@ -16,13 +16,12 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Redirect authenticated users to home
   useEffect(() => {
-    console.log('Login useEffect:', { user: !!user, loading });
-    if (user && !loading) {
-      console.log('Navigating to /home');
+    if (user) {
       navigate('/home', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,10 +32,9 @@ export default function LoginPage() {
       } else {
         await signInEmail(email, password);
       }
-      console.log(isRegister ? 'Kayıt başarılı!' : 'Giriş başarılı! Yönlendiriliyorsun...');
+      // Success handled by auth listener + router
     } catch (err) {
-      console.error('Giriş hatası:', err);
-    } finally {
+      console.error('Login error:', err);
       setIsSubmitting(false);
     }
   };
@@ -44,10 +42,9 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     try {
-      console.log('Starting Google signInWithRedirect...');
       await signInGoogle();
     } catch (err) {
-      console.error('Google giriş hatası:', err);
+      console.error('Google sign in error:', err);
       setIsSubmitting(false);
     }
   };
@@ -85,8 +82,8 @@ export default function LoginPage() {
               <TabsTrigger value="google">Google</TabsTrigger>
             </TabsList>
             <TabsContent value="email" className="space-y-4 mt-4">
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
                   <Label htmlFor="email">E-posta</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -101,7 +98,7 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
-                <div className="grid gap-2">
+                <div className="space-y-2">
                   <Label htmlFor="password">Şifre</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -116,7 +113,7 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isRegister ? 'Kaydol' : 'Giriş Yap'}
                 </Button>

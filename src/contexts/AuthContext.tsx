@@ -1,9 +1,28 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { User as FirebaseUser, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { User as FirebaseUser, onAuthStateChanged, getRedirectResult, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { User } from '@/types/user';
+
+// Firebase hata kodlarını Türkçe mesajlara çevir
+const getFirebaseErrorMessage = (code: string): string => {
+  const errorMessages: Record<string, string> = {
+    'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+    'auth/user-not-found': 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.',
+    'auth/wrong-password': 'Şifre hatalı.',
+    'auth/invalid-email': 'Geçersiz e-posta adresi.',
+    'auth/email-already-in-use': 'Bu e-posta adresi zaten kullanımda.',
+    'auth/weak-password': 'Şifre çok zayıf. En az 6 karakter olmalıdır.',
+    'auth/too-many-requests': 'Çok fazla deneme yaptınız. Lütfen bir süre bekleyin.',
+    'auth/network-request-failed': 'İnternet bağlantınızı kontrol edin.',
+    'auth/popup-closed-by-user': 'Google giriş penceresi kapatıldı.',
+    'auth/account-exists-with-different-credential': 'Bu e-posta adresi başka bir yöntemle kayıtlı.',
+    'auth/requires-recent-login': 'Bu işlem için tekrar giriş yapmanız gerekiyor.',
+    'auth/user-disabled': 'Bu hesap devre dışı bırakılmış.',
+  };
+  return errorMessages[code] || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+};
 
 interface AuthContextType {
   user: User | null;
@@ -69,10 +88,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await setPersistence(auth, browserSessionPersistence);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('[Auth] signInEmail success:', result.user?.email);
     } catch (err: any) {
-      setError(err.message || 'Giriş başarısız oldu.');
+      console.error('[Auth] signInEmail failed:', err.code, err.message);
+      setError(getFirebaseErrorMessage(err.code));
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,21 +104,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await setPersistence(auth, browserSessionPersistence);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('[Auth] registerEmail success:', result.user?.email);
     } catch (err: any) {
-      setError(err.message || 'Kayıt başarısız oldu.');
+      console.error('[Auth] registerEmail failed:', err.code, err.message);
+      setError(getFirebaseErrorMessage(err.code));
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signInGoogle = async () => {
     setError(null);
+    setLoading(true);
     try {
+      await setPersistence(auth, browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       await signInWithRedirect(auth, provider);
+      console.log('[Auth] Google signIn initiated');
     } catch (err: any) {
-      setError(err.message || 'Google girişi başarısız oldu.');
+      console.error('[Auth] Google signIn failed:', err);
+      setError(getFirebaseErrorMessage(err.code));
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 

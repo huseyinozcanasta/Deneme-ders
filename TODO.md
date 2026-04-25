@@ -1,13 +1,14 @@
-# Task: Fix Image Upload & COOP Errors
+# Login to Home Page Fix - Progress Tracker
 
-## Steps:
-- [x] Step 1: Add Firebase Storage to lib/firebase.ts and export storage
-- [x] Step 2: Update useUploadFile.ts - Firebase Storage upload (no Nostr req)
-- [x] Step 3: Add COOP meta header to index.html
-- [ ] Step 4: Test & complete
+## Plan Steps
+- [x] Step 1: Create auth guard components (ProtectedRoute.tsx, AuthGate.tsx)
+- [x] Step 2: Update AuthContext.tsx with persistence and better error logging
+- [x] Step 3: Update AppRouter.tsx to use guards
+- [x] Step 4: Update Login.tsx for better UX/error handling
+- [x] Step 5: Test local dev login flow (server at http://localhost:8082/)
+- [x] Step 6: Guide Firebase Console setup (done in completion result)
+- [ ] Step 7: Test production build
+- [ ] Complete: attempt_completion
 
-Current: 
-- [x] Firebase Storage code 
-- [x] Deploy storage.rules 
-- [x] Auth redirect flow (no COOP)
-- Test upload works!
+**Instructions**: Enable Email/Password & Google providers in Firebase Console Authentication → Sign-in method first for full fix.
+
