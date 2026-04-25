@@ -319,6 +319,16 @@ export function useFirebaseSync() {
     },
   });
 
+  // Helper function to safely convert Firestore timestamp to milliseconds
+  const toMillisSafe = (timestamp: any): number => {
+    if (!timestamp) return Date.now();
+    if (typeof timestamp === 'number') return timestamp;
+    if (typeof timestamp === 'string') return new Date(timestamp).getTime() || Date.now();
+    if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+    if (timestamp instanceof Date) return timestamp.getTime();
+    return Date.now();
+  };
+
   // Helper functions to convert between local and Firebase formats
   const convertSubjectFromFirebase = (fbSubject: any): Subject => ({
     id: fbSubject.id,
@@ -326,7 +336,7 @@ export function useFirebaseSync() {
     description: fbSubject.description || undefined,
     color: fbSubject.color,
     slides: [], // Slides are stored locally only
-    createdAt: (fbSubject.createdAt && typeof fbSubject.createdAt.toMillis === 'function') ? fbSubject.createdAt.toMillis() : Date.now(),
+    createdAt: toMillisSafe(fbSubject.createdAt),
   });
 
   const convertSubjectToFirebase = (subject: Subject) => ({
@@ -341,7 +351,7 @@ export function useFirebaseSync() {
     subjectId: fbQuiz.subjectId,
     title: fbQuiz.title,
     questions: fbQuiz.questions as QuizQuestion[],
-    createdAt: fbQuiz.createdAt?.toMillis() || Date.now(),
+    createdAt: toMillisSafe(fbQuiz.createdAt),
   });
 
   const convertQuizToFirebase = (quiz: Quiz) => ({
@@ -353,7 +363,7 @@ export function useFirebaseSync() {
   const convertStudyPlanFromFirebase = (fbPlan: any): StudyPlan => ({
     id: fbPlan.id,
     subjectId: fbPlan.subjectId,
-    date: fbPlan.date?.toMillis() || Date.now(),
+    date: toMillisSafe(fbPlan.date),
     taskType: fbPlan.taskType as 'study' | 'review' | 'quiz',
     taskId: fbPlan.taskId || undefined,
     completed: fbPlan.completed,
@@ -374,7 +384,7 @@ export function useFirebaseSync() {
     answer: fbCard.answer,
     easeFactor: fbCard.easeFactor,
     interval: fbCard.interval,
-    nextReviewDate: fbCard.nextReviewDate?.toMillis() || Date.now(),
+    nextReviewDate: toMillisSafe(fbCard.nextReviewDate),
     reviewCount: fbCard.reviewCount,
   });
 
@@ -392,8 +402,8 @@ export function useFirebaseSync() {
     id: fbSession.id,
     subjectId: fbSession.subjectId,
     type: fbSession.type as 'slide' | 'quiz' | 'spaced',
-    startTime: fbSession.startTime?.toMillis() || Date.now(),
-    endTime: fbSession.endTime?.toMillis() || undefined,
+    startTime: toMillisSafe(fbSession.startTime),
+    endTime: fbSession.endTime ? toMillisSafe(fbSession.endTime) : undefined,
     completed: fbSession.completed,
   });
 
@@ -411,7 +421,7 @@ export function useFirebaseSync() {
     quizzesCompleted: fbUser.quizzesCompleted || 0,
     averageQuizScore: fbUser.averageQuizScore || 0,
     streakDays: fbUser.streakDays || 0,
-    lastStudyDate: fbUser.lastStudyDate?.toMillis() || undefined,
+    lastStudyDate: fbUser.lastStudyDate ? toMillisSafe(fbUser.lastStudyDate) : undefined,
   });
 
   return {
