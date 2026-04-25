@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { User as FirebaseUser, onAuthStateChanged, getRedirectResult, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { User as FirebaseUser, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { User } from '@/types/user';
 
@@ -50,38 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    const handleAuthChange = async () => {
-      try {
-        // Handle redirect result first
-        const redirectResult = await getRedirectResult(auth);
-        console.log('Redirect result:', redirectResult);
-        
-        // Then listen for auth state
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-          console.log('Auth state changed:', firebaseUser ? firebaseUser.email : 'null');
-          try {
-            if (firebaseUser) {
-              setUser(firebaseUser);
-              setError(null);
-            } else {
-              setUser(null);
-            }
-          } catch (err) {
-            console.error('Auth state change error:', err);
-            setUser(null);
-          } finally {
-            setLoading(false);
-          }
-        });
-        return unsubscribe;
-      } catch (err: any) {
-        console.error('Redirect result error:', err);
-        setError(err.message);
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log('Auth state changed:', firebaseUser ? firebaseUser.email : 'null');
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setError(null);
+      } else {
+        setUser(null);
       }
-    };
+      setLoading(false);
+    });
 
-    handleAuthChange();
+    return unsubscribe;
   }, []);
 
   const signInEmail = async (email: string, password: string) => {
@@ -122,10 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await setPersistence(auth, browserSessionPersistence);
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
-      console.log('[Auth] Google signIn initiated');
+      const result = await signInWithPopup(auth, provider);
+      console.log('[Auth] Google signIn success:', result.user?.email);
     } catch (err: any) {
-      console.error('[Auth] Google signIn failed:', err);
+      console.error('[Auth] Google signIn failed:', err.code, err.message);
       setError(getFirebaseErrorMessage(err.code));
       throw err;
     } finally {
