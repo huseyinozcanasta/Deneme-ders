@@ -33,8 +33,12 @@ export default function LoginPage() {
         await signInEmail(email, password);
       }
       // Success handled by auth listener + router
-    } catch (err) {
-      console.error('Login error:', err);
+    } catch (err: any) {
+      // Email zaten kayıtlıysa giriş moduna geç
+      if (err.code === 'auth/email-already-in-use') {
+        setIsRegister(false);
+      }
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -44,7 +48,8 @@ export default function LoginPage() {
     try {
       await signInGoogle();
     } catch (err) {
-      console.error('Google sign in error:', err);
+      // Google hatası AuthContext tarafından işleniyor
+    } finally {
       setIsSubmitting(false);
     }
   };
