@@ -22,11 +22,14 @@ import {
   Mail,
   Camera,
   Eye,
-  EyeOff
+  EyeOff,
+  Server,
+  RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { getCurrentApiUrl, setApiUrl, resetApiUrl } from '@/hooks/useShakespeare';
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -48,6 +51,9 @@ export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('tr');
+  
+  // API settings states
+  const [apiUrl, setApiUrlState] = useState(getCurrentApiUrl());
 
   if (!user) {
     navigate('/');
@@ -160,7 +166,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="account" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Hesap
@@ -172,6 +178,10 @@ export default function SettingsPage() {
           <TabsTrigger value="app" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Uygulama
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            Gelişmiş
           </TabsTrigger>
         </TabsList>
 
@@ -434,6 +444,67 @@ export default function SettingsPage() {
                 <Save className="h-4 w-4 mr-2" />
                 Ayarları Kaydet
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Advanced Settings Tab */}
+        <TabsContent value="advanced" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Server className="h-5 w-5" />
+                AI API Ayarları
+              </CardTitle>
+              <CardDescription>
+                Shakespeare AI API adresini özelleştirin. Değişiklikler tarayıcılar arasında senkronize edilmez, her cihazda ayrı ayarlanmalıdır.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="api-url">API Adresi</Label>
+                <Input
+                  id="api-url"
+                  type="url"
+                  placeholder="https://ai.shakespeare.diy/v1"
+                  value={apiUrl}
+                  onChange={(e) => setApiUrlState(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Varsayılan: https://ai.shakespeare.diy/v1
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    setApiUrl(apiUrl);
+                    toast({
+                      title: 'Başarılı',
+                      description: 'API adresi kaydedildi',
+                    });
+                  }}
+                  disabled={!apiUrl.trim()}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Kaydet
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    resetApiUrl();
+                    setApiUrlState(getCurrentApiUrl());
+                    toast({
+                      title: 'Başarılı',
+                      description: 'API adresi varsayılana sıfırlandı',
+                    });
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Sıfırla
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

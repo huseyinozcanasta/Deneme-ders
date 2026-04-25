@@ -59,7 +59,31 @@ export interface ModelsResponse {
 }
 
 // Configuration
-const SHAKESPEARE_API_URL = 'https://ai.shakespeare.diy/v1';
+const DEFAULT_SHAKESPEARE_API_URL = 'https://ai.shakespeare.diy/v1';
+const API_URL_STORAGE_KEY = 'shakespeare_api_url';
+
+// Helper to get API URL from localStorage or use default
+function getApiUrl(): string {
+  if (typeof window === 'undefined') return DEFAULT_SHAKESPEARE_API_URL;
+  return localStorage.getItem(API_URL_STORAGE_KEY) || DEFAULT_SHAKESPEARE_API_URL;
+}
+
+// Helper to set API URL in localStorage
+export function setApiUrl(url: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(API_URL_STORAGE_KEY, url);
+}
+
+// Helper to reset API URL to default
+export function resetApiUrl(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(API_URL_STORAGE_KEY);
+}
+
+// Helper to get current API URL (for external use)
+export function getCurrentApiUrl(): string {
+  return getApiUrl();
+}
 
 // Helper function to create NIP-98 token
 async function createNIP98Token(
@@ -163,6 +187,7 @@ export function useShakespeare() {
     setError(null);
 
     try {
+      const apiUrl = getApiUrl();
       const requestBody: ChatCompletionRequest = {
         model,
         messages,
@@ -171,12 +196,12 @@ export function useShakespeare() {
 
       const token = await createNIP98Token(
         'POST',
-        `${SHAKESPEARE_API_URL}/chat/completions`,
+        `${apiUrl}/chat/completions`,
         requestBody,
         user
       );
 
-      const response = await fetch(`${SHAKESPEARE_API_URL}/chat/completions`, {
+      const response = await fetch(`${apiUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Nostr ${token}`,
@@ -225,6 +250,7 @@ export function useShakespeare() {
     setError(null);
 
     try {
+      const apiUrl = getApiUrl();
       const requestBody: ChatCompletionRequest = {
         model,
         messages,
@@ -234,12 +260,12 @@ export function useShakespeare() {
 
       const token = await createNIP98Token(
         'POST',
-        `${SHAKESPEARE_API_URL}/chat/completions`,
+        `${apiUrl}/chat/completions`,
         requestBody,
         user
       );
 
-      const response = await fetch(`${SHAKESPEARE_API_URL}/chat/completions`, {
+      const response = await fetch(`${apiUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Nostr ${token}`,
@@ -318,14 +344,15 @@ export function useShakespeare() {
     setError(null);
 
     try {
+      const apiUrl = getApiUrl();
       const token = await createNIP98Token(
         'GET',
-        `${SHAKESPEARE_API_URL}/models`,
+        `${apiUrl}/models`,
         undefined,
         user
       );
 
-      const response = await fetch(`${SHAKESPEARE_API_URL}/models`, {
+      const response = await fetch(`${apiUrl}/models`, {
         method: 'GET',
         headers: {
           'Authorization': `Nostr ${token}`,

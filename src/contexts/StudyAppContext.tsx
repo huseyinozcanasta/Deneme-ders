@@ -199,6 +199,7 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         
         const dataPromise = Promise.all([
           firebaseSync.subjects || Promise.resolve([]),
+          firebaseSync.slides || Promise.resolve([]),
           firebaseSync.quizzes || Promise.resolve([]),
           firebaseSync.studyPlans || Promise.resolve([]),
           firebaseSync.spacedCards || Promise.resolve([]),
@@ -206,24 +207,42 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
           firebaseSync.userProfile || Promise.resolve(null),
         ]);
 
-        const [fbSubjects, fbQuizzes, fbStudyPlans, fbSpacedCards, fbStudySessions, fbUserProfile] = 
-          await Promise.race([dataPromise, timeoutPromise]) as [any, any, any, any, any, any];
+        const [fbSubjects, fbSlides, fbQuizzes, fbStudyPlans, fbSpacedCards, fbStudySessions, fbUserProfile] = 
+          await Promise.race([dataPromise, timeoutPromise]) as [any, any, any, any, any, any, any];
 
         if (!isMounted) return;
 
         // Convert Firebase data to local format
         const convertedSubjects = fbSubjects?.map(firebaseSync.convertSubjectFromFirebase) || [];
+        const convertedSlides = fbSlides?.map(firebaseSync.convertSlideFromFirebase) || [];
         const convertedQuizzes = fbQuizzes?.map(firebaseSync.convertQuizFromFirebase) || [];
         const convertedStudyPlans = fbStudyPlans?.map(firebaseSync.convertStudyPlanFromFirebase) || [];
         const convertedSpacedCards = fbSpacedCards?.map(firebaseSync.convertSpacedCardFromFirebase) || [];
         const convertedStudySessions = fbStudySessions?.map(firebaseSync.convertStudySessionFromFirebase) || [];
         const convertedStats = fbUserProfile ? firebaseSync.convertStatsFromFirebase(fbUserProfile) : initialStats;
 
+        // Group slides by subject
+        const slidesBySubject: LocalSlideState = {};
+        convertedSlides.forEach((slide: any) => {
+          if (!slidesBySubject[slide.subjectId]) {
+            slidesBySubject[slide.subjectId] = [];
+          }
+          slidesBySubject[slide.subjectId].push({
+            id: slide.id,
+            title: slide.title,
+            content: slide.content,
+            imageUrl: slide.imageUrl,
+          });
+        });
+        
+        // Update local slide state with Firebase data
+        setLocalSlideState(slidesBySubject);
+
         // Merge with local slides using ref to avoid dependency cycle
         setState(prev => {
           const subjectsWithSlides = convertedSubjects.map(subject => ({
             ...subject,
-            slides: localSlideState[subject.id] || []
+            slides: slidesBySubject[subject.id] || localSlideState[subject.id] || []
           }));
 
           // Preserve any subjects that exist locally but not in Firebase yet
@@ -342,7 +361,7 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       newSlide.imageUrl = await compressImage(newSlide.imageUrl, 0.6);
     }
     
-    // Store slide locally only
+    // Store slide locally first for immediate UI update
     setLocalSlideState(prev => ({
       ...prev,
       [subjectId]: [...(prev[subjectId] || []), newSlide]
@@ -356,8 +375,23 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
       ),
     }));
     
+    // If user is authenticated, also save to Firebase for cross-device sync
+    if (user) {
+      try {
+        await firebaseSync.createSlideMutation.mutateAsync({
+          subjectId,
+          title: newSlide.title,
+          content: newSlide.content,
+          imageUrl: newSlide.imageUrl,
+        });
+      } catch (error) {
+        console.error('Failed to save slide to Firebase:', error);
+        // Slide is still saved locally, so we don't throw error
+      }
+    }
+    
     return newSlide;
-  }, []);
+  }, [user, firebaseSync]);
 
   const updateSlide = useCallback(async (subjectId: string, slideId: string, updates: Partial<Slide>) => {
     // Compress image if updating imageUrl
@@ -387,9 +421,26 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         } : s
       ),
     }));
-  }, []);
+    
+    // If user is authenticated, also update in Firebase
+    if (user) {
+      try {
+        await firebaseSync.updateSlideMutation.mutateAsync({
+          id: slideId,
+          updates: {
+            title: processedUpdates.title,
+            content: processedUpdates.content,
+            imageUrl: processedUpdates.imageUrl,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to update slide in Firebase:', error);
+        // Local update is already done, so we don't throw error
+      }
+    }
+  }, [user, firebaseSync]);
 
-  const deleteSlide = useCallback((subjectId: string, slideId: string) => {
+  const deleteSlide = useCallback(async (subjectId: string, slideId: string) => {
     // Update local slide storage
     setLocalSlideState(prev => ({
       ...prev,
@@ -403,7 +454,17 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         s.id === subjectId ? { ...s, slides: (s.slides || []).filter(sl => sl.id !== slideId) } : s
       ),
     }));
-  }, []);
+    
+    // If user is authenticated, also delete from Firebase
+    if (user) {
+      try {
+        await firebaseSync.deleteSlideMutation.mutateAsync(slideId);
+      } catch (error) {
+        console.error('Failed to delete slide from Firebase:', error);
+        // Local deletion is already done, so we don't throw error
+      }
+    }
+  }, [user, firebaseSync]);
 
   const addQuiz = useCallback(async (subjectId: string, title: string, questions: Omit<QuizQuestion, 'id'>[]): Promise<Quiz> => {
     if (!user) {

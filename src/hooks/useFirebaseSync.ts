@@ -29,6 +29,7 @@ import type {
 const COLLECTIONS = {
   USERS: 'users',
   SUBJECTS: 'subjects',
+  SLIDES: 'slides',
   QUIZZES: 'quizzes',
   STUDY_PLANS: 'studyPlans',
   SPACED_CARDS: 'spacedCards',
@@ -120,6 +121,62 @@ export function useFirebaseSync() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
+    },
+  });
+
+  // Slides
+  const { data: slides } = useQuery({
+    queryKey: ['slides', user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return [];
+      const q = query(
+        collection(db, COLLECTIONS.SLIDES),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    },
+    enabled: !!user?.uid,
+  });
+
+  const createSlideMutation = useMutation({
+    mutationFn: async (slideData: { subjectId: string; title: string; content?: string; imageUrl?: string; order?: number }) => {
+      if (!user?.uid) throw new Error('User not authenticated');
+      const data = {
+        ...slideData,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      const docRef = await addDoc(collection(db, COLLECTIONS.SLIDES), data);
+      return { id: docRef.id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['slides'] });
+    },
+  });
+
+  const updateSlideMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<{ title: string; content?: string; imageUrl?: string; order?: number }> }) => {
+      const docRef = doc(db, COLLECTIONS.SLIDES, id);
+      const data = {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      };
+      await updateDoc(docRef, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['slides'] });
+    },
+  });
+
+  const deleteSlideMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, COLLECTIONS.SLIDES, id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['slides'] });
     },
   });
 
@@ -335,8 +392,25 @@ export function useFirebaseSync() {
     name: fbSubject.name,
     description: fbSubject.description || undefined,
     color: fbSubject.color,
-    slides: [], // Slides are stored locally only
+    slides: [], // Slides will be populated separately
     createdAt: toMillisSafe(fbSubject.createdAt),
+  });
+
+  const convertSlideFromFirebase = (fbSlide: any): { id: string; subjectId: string; title: string; content?: string; imageUrl?: string; createdAt: number } => ({
+    id: fbSlide.id,
+    subjectId: fbSlide.subjectId,
+    title: fbSlide.title,
+    content: fbSlide.content || undefined,
+    imageUrl: fbSlide.imageUrl || undefined,
+    createdAt: toMillisSafe(fbSlide.createdAt),
+  });
+
+  const convertSlideToFirebase = (slide: { subjectId: string; title: string; content?: string; imageUrl?: string; order?: number }) => ({
+    subjectId: slide.subjectId,
+    title: slide.title,
+    content: slide.content || null,
+    imageUrl: slide.imageUrl || null,
+    order: slide.order || 0,
   });
 
   const convertSubjectToFirebase = (subject: Subject) => ({
@@ -428,6 +502,7 @@ export function useFirebaseSync() {
     // Data
     userProfile,
     subjects,
+    slides,
     quizzes,
     studyPlans,
     spacedCards,
@@ -437,6 +512,9 @@ export function useFirebaseSync() {
     createSubjectMutation,
     updateSubjectMutation,
     deleteSubjectMutation,
+    createSlideMutation,
+    updateSlideMutation,
+    deleteSlideMutation,
     createQuizMutation,
     updateQuizMutation,
     deleteQuizMutation,
@@ -451,6 +529,8 @@ export function useFirebaseSync() {
     // Converters
     convertSubjectFromFirebase,
     convertSubjectToFirebase,
+    convertSlideFromFirebase,
+    convertSlideToFirebase,
     convertQuizFromFirebase,
     convertQuizToFirebase,
     convertStudyPlanFromFirebase,
