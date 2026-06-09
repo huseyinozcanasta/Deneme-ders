@@ -1,13 +1,11 @@
 import { useMemo } from 'react';
 import { 
-  Trophy, 
   Clock, 
   Target, 
   Flame, 
   BookOpen,
   TrendingUp,
   Calendar,
-  Award,
   Brain,
   Zap
 } from 'lucide-react';
@@ -24,7 +22,7 @@ export function StatsDashboard({ subject }: StatsDashboardProps) {
   const { state } = useStudyApp();
 
   const stats = useMemo(() => {
-    let filteredSessions = subject 
+    const filteredSessions = subject 
       ? state.studySessions.filter(s => s.subjectId === subject.id)
       : state.studySessions;
 

@@ -10,6 +10,12 @@ import { useStudyApp } from '@/contexts/StudyAppContext';
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { state, isFirebaseSynced } = useStudyApp();
+
+  useSeoMeta({
+    title: 'StudyFlow - Akıllı Ders Çalışma Platformu',
+    description: 'Slaytlarınızı yükleyin, otomatik quizler oluşturun ve spaced repetition ile verimli çalışın.',
+  });
 
   useEffect(() => {
     if (!user && !loading) {
@@ -28,13 +34,6 @@ const Index = () => {
   if (!user) {
     return null;
   }
-
-  useSeoMeta({
-    title: 'StudyFlow - Akıllı Ders Çalışma Platformu',
-    description: 'Slaytlarınızı yükleyin, otomatik quizler oluşturun ve spaced repetition ile verimli çalışın.',
-  });
-
-  const { state, isFirebaseSynced } = useStudyApp();
 
   // Show loading state while Firebase data is syncing
   if (!isFirebaseSynced) {

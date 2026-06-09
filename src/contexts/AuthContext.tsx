@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { User as FirebaseUser, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
+import { onAuthStateChanged, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { User } from '@/types/user';
@@ -71,9 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setPersistence(auth, browserSessionPersistence);
       const result = await signInWithEmailAndPassword(auth, email, password);
       console.log('[Auth] signInEmail success:', result.user?.email);
-    } catch (err: any) {
-      console.error('[Auth] signInEmail failed:', err.code, err.message);
-      setError(getFirebaseErrorMessage(err.code));
+    } catch (err: unknown) {
+      const firebaseErr = err instanceof FirebaseError ? err : null;
+      console.error('[Auth] signInEmail failed:', firebaseErr?.code, firebaseErr?.message);
+      setError(getFirebaseErrorMessage(firebaseErr?.code ?? ''));
       throw err;
     } finally {
       setLoading(false);
@@ -87,9 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setPersistence(auth, browserSessionPersistence);
       const result = await createUserWithEmailAndPassword(auth, email, password);
       console.log('[Auth] registerEmail success:', result.user?.email);
-    } catch (err: any) {
-      console.error('[Auth] registerEmail failed:', err.code, err.message);
-      setError(getFirebaseErrorMessage(err.code));
+    } catch (err: unknown) {
+      const firebaseErr = err instanceof FirebaseError ? err : null;
+      console.error('[Auth] registerEmail failed:', firebaseErr?.code, firebaseErr?.message);
+      setError(getFirebaseErrorMessage(firebaseErr?.code ?? ''));
       throw err;
     } finally {
       setLoading(false);
@@ -104,9 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       console.log('[Auth] Google signIn success:', result.user?.email);
-    } catch (err: any) {
-      console.error('[Auth] Google signIn failed:', err.code, err.message);
-      setError(getFirebaseErrorMessage(err.code));
+    } catch (err: unknown) {
+      const firebaseErr = err instanceof FirebaseError ? err : null;
+      console.error('[Auth] Google signIn failed:', firebaseErr?.code, firebaseErr?.message);
+      setError(getFirebaseErrorMessage(firebaseErr?.code ?? ''));
       throw err;
     } finally {
       setLoading(false);
@@ -117,8 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await signOut(auth);
-    } catch (err: any) {
-      setError(err.message || 'Çıkış başarısız oldu.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Çıkış başarısız oldu.');
       throw err;
     }
   };

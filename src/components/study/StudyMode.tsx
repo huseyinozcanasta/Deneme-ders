@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -13,7 +13,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStudyApp } from '@/contexts/StudyAppContext';
 import { useGemini } from '@/hooks/useGemini';
 import { GeminiSettings } from './GeminiSettings';
-import type { Slide, Subject } from '@/types/study';
+import type { Subject } from '@/types/study';
 
 interface StudyModeProps {
   subject: Subject;
@@ -36,7 +36,7 @@ interface AISummary {
 
 export function StudyMode({ subject, onComplete }: StudyModeProps) {
   const { addStudySession, completeSession } = useStudyApp();
-  const { summarizeContent, isLoading, error, hasApiKey } = useGemini();
+  const { summarizeContent, hasApiKey } = useGemini();
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [studyMode, setStudyMode] = useState<'learn' | 'review'>('learn');
@@ -48,13 +48,18 @@ export function StudyMode({ subject, onComplete }: StudyModeProps) {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
   useEffect(() => {
-    const session = addStudySession(subject.id, 'slide');
-    setSessionId(session.id);
-    setStartTime(Date.now());
+    let createdSessionId: string | null = null;
+    const start = Date.now();
+    setStartTime(start);
+    (async () => {
+      const session = await addStudySession(subject.id, 'slide');
+      createdSessionId = session.id;
+      setSessionId(session.id);
+    })();
     return () => {
-      if (sessionId) {
-        const duration = Math.round((Date.now() - startTime) / 60000);
-        completeSession(sessionId, duration);
+      if (createdSessionId) {
+        const duration = Math.round((Date.now() - start) / 60000);
+        completeSession(createdSessionId, duration);
       }
     };
   }, []);

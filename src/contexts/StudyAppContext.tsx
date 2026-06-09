@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFirebaseSync } from '@/hooks/useFirebaseSync';
+import type { DocumentData } from 'firebase/firestore';
 import type { 
   StudyAppState, 
   Subject, 
@@ -12,6 +13,8 @@ import type {
   SpacedRepetitionCard,
   StudyStats 
 } from '@/types/study';
+
+type FbRow = DocumentData & { id: string };
 
 const initialStats: StudyStats = {
   totalStudyTime: 0,
@@ -208,7 +211,9 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
         ]);
 
         const [fbSubjects, fbSlides, fbQuizzes, fbStudyPlans, fbSpacedCards, fbStudySessions, fbUserProfile] = 
-          await Promise.race([dataPromise, timeoutPromise]) as [any, any, any, any, any, any, any];
+          await Promise.race([dataPromise, timeoutPromise]) as [
+            FbRow[], FbRow[], FbRow[], FbRow[], FbRow[], FbRow[], FbRow | null
+          ];
 
         if (!isMounted) return;
 
@@ -223,14 +228,14 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
 
         // Group slides by subject
         const slidesBySubject: LocalSlideState = {};
-        convertedSlides.forEach((slide: any) => {
+        convertedSlides.forEach((slide) => {
           if (!slidesBySubject[slide.subjectId]) {
             slidesBySubject[slide.subjectId] = [];
           }
           slidesBySubject[slide.subjectId].push({
             id: slide.id,
             title: slide.title,
-            content: slide.content,
+            content: slide.content ?? '',
             imageUrl: slide.imageUrl,
           });
         });
@@ -247,7 +252,7 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
 
           // Preserve any subjects that exist locally but not in Firebase yet
           // (prevents race condition during slide upload)
-          const existingSubjectIds = new Set(convertedSubjects.map((s: any) => s.id));
+          const existingSubjectIds = new Set(convertedSubjects.map((s) => s.id));
           const localOnlySubjects = prev.subjects.filter(s => !existingSubjectIds.has(s.id));
 
           return {
@@ -325,7 +330,7 @@ export function StudyAppProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const subjectData: any = {
+      const subjectData: Omit<Subject, 'id' | 'slides'> = {
         name,
         color,
         createdAt: Date.now(),

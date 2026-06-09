@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Image, Plus, X, ArrowRight, Loader2, File as FileIcon, AlertCircle, CloudUpload } from 'lucide-react';
+import { Upload, FileText, Image, Plus, X, Loader2, File as FileIcon, AlertCircle, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,7 @@ import type { Slide } from '@/types/study';
 
 // Configure PDF.js worker - using CDN with proper initialization
 if (typeof window !== 'undefined') {
-  // @ts-ignore - PDF.js worker setup
+  // @ts-expect-error - PDF.js worker setup
   window.pdfjsWorkerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
@@ -48,7 +48,7 @@ interface SlideUploadProps {
   onComplete?: () => void;
 }
 
-export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
+export function SlideUpload({ subjectId, onComplete: _onComplete }: SlideUploadProps) {
   const { addSlide } = useStudyApp();
   const { toast } = useToast();
   const { mutateAsync: uploadFile } = useUploadFile();
@@ -88,7 +88,7 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
     // Extract text content from the page
     const textContent = await page.getTextContent();
     const text = textContent.items
-      .map((item: any) => item.str)
+      .map((item) => ('str' in item ? item.str : ''))
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -184,22 +184,22 @@ export function SlideUpload({ subjectId, onComplete }: SlideUploadProps) {
               setSlides(prev => [...prev, newSlide]);
             }
           }
-        } catch (pdfError: any) {
+        } catch (pdfError: unknown) {
           console.error('Error loading PDF:', pdfError);
           
           // Provide specific error messages based on the error
           let errorMessage = 'PDF dosyası yüklenemedi';
-          
-          if (pdfError.name === 'PasswordException') {
+          const pdfErr = pdfError as { name?: string; message?: string };
+          if (pdfErr.name === 'PasswordException') {
             errorMessage = 'Bu PDF şifre korumalı. Lütfen şifresiz bir PDF kullanın.';
-          } else if (pdfError.name === 'InvalidPDFException' || pdfError.message?.includes('Invalid PDF')) {
+          } else if (pdfErr.name === 'InvalidPDFException' || pdfErr.message?.includes('Invalid PDF')) {
             errorMessage = 'Bu PDF dosyası geçersiz veya bozuk görünüyor.';
-          } else if (pdfError.message?.includes('Missing PDF')) {
+          } else if (pdfErr.message?.includes('Missing PDF')) {
             errorMessage = 'PDF dosyası bulunamadı veya okunamıyor.';
-          } else if (pdfError.message?.includes('empty')) {
+          } else if (pdfErr.message?.includes('empty')) {
             errorMessage = 'PDF dosyası boş.';
           } else {
-            errorMessage = `PDF yüklenemedi: ${pdfError.message || 'Bilinmeyen hata'}`;
+            errorMessage = `PDF yüklenemedi: ${pdfErr.message || 'Bilinmeyen hata'}`;
           }
           
           toast({

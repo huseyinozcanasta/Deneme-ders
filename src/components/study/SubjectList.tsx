@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, BookOpen, Brain, Target, Clock, MoreVertical, Edit, Copy, Calendar } from 'lucide-react';
+import { Plus, Trash2, BookOpen, Brain, Target, MoreVertical, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStudyApp } from '@/contexts/StudyAppContext';
@@ -31,8 +31,7 @@ interface SubjectCardProps {
 export function SubjectCard({ subject }: SubjectCardProps) {
   const navigate = useNavigate();
   const { deleteSubject, state } = useStudyApp();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(subject.name);
+
   const [isHovered, setIsHovered] = useState(false);
 
   const stats = {

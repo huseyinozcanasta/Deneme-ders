@@ -116,7 +116,7 @@ Kurallar:
 
       const questions = JSON.parse(jsonStr) as GeneratedQuestion[];
       
-      return questions.map((q, idx) => ({
+      return questions.map((q) => ({
         ...q,
         question: q.question,
         options: q.options,

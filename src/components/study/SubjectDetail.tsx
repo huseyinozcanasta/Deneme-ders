@@ -6,10 +6,8 @@ import {
   Brain, 
   Calendar, 
   BarChart3,
-  Settings,
   Upload,
-  Play,
-  ChevronRight
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

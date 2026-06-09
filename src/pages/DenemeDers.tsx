@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function DenemeDers() {
   const { user, loading: authLoading } = useCurrentUser();
   const navigate = useNavigate();
-  const { state, isStorageReady } = useStudyApp();
+  const { isStorageReady } = useStudyApp();
 
   useEffect(() => {
     if (!authLoading && !user) {
