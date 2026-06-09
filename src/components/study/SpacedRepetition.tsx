@@ -3,7 +3,6 @@ import {
   Brain, 
   ChevronLeft, 
   ChevronRight, 
-  CheckCircle, 
   XCircle,
   Clock,
   RotateCcw,
@@ -13,8 +12,7 @@ import {
   Sparkles,
   Loader2,
   Plus,
-  AlertCircle,
-  FileText
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useStudyApp } from '@/contexts/StudyAppContext';
 import { useGemini } from '@/hooks/useGemini';
 import { GeminiSettings } from './GeminiSettings';
-import type { SpacedRepetitionCard, Subject } from '@/types/study';
+import type { Subject } from '@/types/study';
 
 interface SpacedRepetitionProps {
   subject?: Subject;
@@ -35,7 +33,7 @@ interface SpacedRepetitionProps {
 
 export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
   const { state, reviewSpacedCard, addSpacedCard } = useStudyApp();
-  const { generateFlashcards, isLoading, error, hasApiKey } = useGemini();
+  const { generateFlashcards, isLoading, hasApiKey } = useGemini();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
@@ -44,10 +42,10 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
   const [manualQuestion, setManualQuestion] = useState('');
   const [manualAnswer, setManualAnswer] = useState('');
   const [generationStatus, setGenerationStatus] = useState('');
-  const [cardCount, setCardCount] = useState(10);
+  const [cardCount] = useState(10);
 
   const filteredCards = useMemo(() => {
-    let cards = subject 
+    const cards = subject 
       ? state.spacedCards.filter(c => c.subjectId === subject.id)
       : state.spacedCards;
 
@@ -141,7 +139,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
       });
 
       setGenerationStatus(`${cards.length} kart başarıyla oluşturuldu!`);
-    } catch (err) {
+    } catch {
       setGenerationStatus('Kartlar oluşturulamadı.');
     }
   };
@@ -291,7 +289,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
             </div>
 
             <div className="flex gap-2 mb-4">
-              <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
+              <Select value={filter} onValueChange={(v) => setFilter(v as 'all' | 'due' | 'new')}>
                 <SelectTrigger>
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue />
@@ -325,7 +323,7 @@ export function SpacedRepetition({ subject }: SpacedRepetitionProps) {
               <Label className="text-sm">Kart Önizleme</Label>
               <ScrollArea className="h-[200px]">
                 <div className="space-y-2">
-                  {filteredCards.slice(0, 10).map((card, idx) => (
+                  {filteredCards.slice(0, 10).map((card) => (
                     <div 
                       key={card.id} 
                       className="p-3 border rounded-lg"

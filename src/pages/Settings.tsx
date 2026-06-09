@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
   User, 
-  Settings, 
   Shield, 
   Bell, 
   Palette, 
@@ -19,16 +18,15 @@ import {
   LogOut, 
   Save, 
   AlertTriangle,
-  Mail,
-  Camera,
   Eye,
   EyeOff,
   Server,
-  RotateCcw
+  RotateCcw,
+  Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { FirebaseError } from 'firebase/app';
 import { getCurrentApiUrl, setApiUrl, resetApiUrl } from '@/hooks/useShakespeare';
 
 export default function SettingsPage() {
@@ -101,15 +99,15 @@ export default function SettingsPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password change error:', error);
       let errorMessage = 'Şifre değiştirilemedi';
-      
-      if (error.code === 'auth/wrong-password') {
+      const code = error instanceof FirebaseError ? error.code : '';
+      if (code === 'auth/wrong-password') {
         errorMessage = 'Mevcut şifre hatalı';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (code === 'auth/weak-password') {
         errorMessage = 'Yeni şifre çok zayıf';
-      } else if (error.code === 'auth/too-many-requests') {
+      } else if (code === 'auth/too-many-requests') {
         errorMessage = 'Çok fazla deneme, lütfen sonra tekrar deneyin';
       }
       
@@ -131,7 +129,7 @@ export default function SettingsPage() {
         title: 'Başarılı',
         description: 'Çıkış yapıldı',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Hata',
         description: 'Çıkış yapılamadı',

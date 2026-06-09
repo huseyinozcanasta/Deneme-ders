@@ -12,7 +12,8 @@ import {
   where, 
   orderBy, 
   serverTimestamp,
-  Timestamp 
+  Timestamp,
+  type DocumentData
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { 
@@ -53,7 +54,7 @@ export function useFirebaseSync() {
   });
 
   const upsertUserMutation = useMutation({
-    mutationFn: async (userData: Partial<StudyStats> & { preferences?: any }) => {
+    mutationFn: async (userData: Partial<StudyStats> & { preferences?: Record<string, unknown> }) => {
       if (!user?.uid) throw new Error('User not authenticated');
       const docRef = doc(db, COLLECTIONS.USERS, user.uid);
       const data = {
@@ -377,17 +378,17 @@ export function useFirebaseSync() {
   });
 
   // Helper function to safely convert Firestore timestamp to milliseconds
-  const toMillisSafe = (timestamp: any): number => {
+  const toMillisSafe = (timestamp: unknown): number => {
     if (!timestamp) return Date.now();
     if (typeof timestamp === 'number') return timestamp;
     if (typeof timestamp === 'string') return new Date(timestamp).getTime() || Date.now();
-    if (typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+    if (timestamp instanceof Timestamp) return timestamp.toMillis();
     if (timestamp instanceof Date) return timestamp.getTime();
     return Date.now();
   };
 
   // Helper functions to convert between local and Firebase formats
-  const convertSubjectFromFirebase = (fbSubject: any): Subject => ({
+  const convertSubjectFromFirebase = (fbSubject: DocumentData & { id: string }): Subject => ({
     id: fbSubject.id,
     name: fbSubject.name,
     description: fbSubject.description || undefined,
@@ -396,7 +397,7 @@ export function useFirebaseSync() {
     createdAt: toMillisSafe(fbSubject.createdAt),
   });
 
-  const convertSlideFromFirebase = (fbSlide: any): { id: string; subjectId: string; title: string; content?: string; imageUrl?: string; createdAt: number } => ({
+  const convertSlideFromFirebase = (fbSlide: DocumentData & { id: string }): { id: string; subjectId: string; title: string; content?: string; imageUrl?: string; createdAt: number } => ({
     id: fbSlide.id,
     subjectId: fbSlide.subjectId,
     title: fbSlide.title,
@@ -420,7 +421,7 @@ export function useFirebaseSync() {
     slideCount: subject.slides.length,
   });
 
-  const convertQuizFromFirebase = (fbQuiz: any): Quiz => ({
+  const convertQuizFromFirebase = (fbQuiz: DocumentData & { id: string }): Quiz => ({
     id: fbQuiz.id,
     subjectId: fbQuiz.subjectId,
     title: fbQuiz.title,
@@ -434,7 +435,7 @@ export function useFirebaseSync() {
     questions: quiz.questions,
   });
 
-  const convertStudyPlanFromFirebase = (fbPlan: any): StudyPlan => ({
+  const convertStudyPlanFromFirebase = (fbPlan: DocumentData & { id: string }): StudyPlan => ({
     id: fbPlan.id,
     subjectId: fbPlan.subjectId,
     date: toMillisSafe(fbPlan.date),
@@ -451,7 +452,7 @@ export function useFirebaseSync() {
     completed: plan.completed,
   });
 
-  const convertSpacedCardFromFirebase = (fbCard: any): SpacedRepetitionCard => ({
+  const convertSpacedCardFromFirebase = (fbCard: DocumentData & { id: string }): SpacedRepetitionCard => ({
     id: fbCard.id,
     subjectId: fbCard.subjectId,
     question: fbCard.question,
@@ -472,7 +473,7 @@ export function useFirebaseSync() {
     reviewCount: card.reviewCount,
   });
 
-  const convertStudySessionFromFirebase = (fbSession: any): StudySession => ({
+  const convertStudySessionFromFirebase = (fbSession: DocumentData & { id: string }): StudySession => ({
     id: fbSession.id,
     subjectId: fbSession.subjectId,
     type: fbSession.type as 'slide' | 'quiz' | 'spaced',
@@ -489,7 +490,7 @@ export function useFirebaseSync() {
     completed: session.completed,
   });
 
-  const convertStatsFromFirebase = (fbUser: any): StudyStats => ({
+  const convertStatsFromFirebase = (fbUser: DocumentData & { id: string }): StudyStats => ({
     totalStudyTime: fbUser.totalStudyTime || 0,
     totalSessions: fbUser.totalSessions || 0,
     quizzesCompleted: fbUser.quizzesCompleted || 0,

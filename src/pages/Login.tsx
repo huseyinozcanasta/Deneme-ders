@@ -33,9 +33,9 @@ export default function LoginPage() {
         await signInEmail(email, password);
       }
       // Success handled by auth listener + router
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Email zaten kayıtlıysa giriş moduna geç
-      if (err.code === 'auth/email-already-in-use') {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'auth/email-already-in-use') {
         setIsRegister(false);
       }
     } finally {
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await signInGoogle();
-    } catch (err) {
+    } catch {
       // Google hatası AuthContext tarafından işleniyor
     } finally {
       setIsSubmitting(false);

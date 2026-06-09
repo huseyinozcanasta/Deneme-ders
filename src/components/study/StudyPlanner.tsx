@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { 
   Calendar, 
-  Clock, 
   CheckCircle, 
   Circle, 
   ChevronLeft, 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 
 import Index from "./pages/Index";
@@ -26,7 +26,7 @@ export function AppRouter() {
             <Index />
           </ProtectedRoute>
         } />
-        <Route path="/login" element={<LoginPage />} index />
+        <Route path="/login" element={<LoginPage />} />
         <Route 
           path="/subjects" 
           element={
@@ -68,7 +68,6 @@ export function AppRouter() {
           } 
         />
         <Route path="/Deneme-ders" element={<DenemeDers />} />
-        <Route path="/login" element={<LoginPage />} />
         <Route 
           path="/settings" 
           element={

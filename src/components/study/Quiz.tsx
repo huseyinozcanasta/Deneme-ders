@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
   Plus, 
   Trash2, 
-  Play, 
   CheckCircle, 
   XCircle,
   ArrowRight,
@@ -12,7 +11,6 @@ import {
   Loader2,
   Sparkles,
   AlertCircle,
-  Settings,
   FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -118,7 +116,7 @@ export function QuizGenerator({ subject, onComplete }: QuizGeneratorProps) {
   const generateFromSlides = () => {
     const newQuestions: Omit<QuizQuestion, 'id'>[] = [];
     
-    subject.slides.forEach((slide, slideIdx) => {
+    subject.slides.forEach((slide, _slideIdx) => {
       const keyPoints = slide.content.split('\n').filter(l => l.trim().length > 10);
       
       if (keyPoints.length > 0) {
@@ -225,7 +223,7 @@ export function QuizGenerator({ subject, onComplete }: QuizGeneratorProps) {
             </div>
 
             {/* Mode Selection */}
-            <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+            <Tabs value={mode} onValueChange={(v) => setMode(v as 'gemini' | 'manual' | 'basic')}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="gemini" className="gap-1">
                   <Sparkles className="h-4 w-4" />
@@ -490,7 +488,7 @@ interface QuizPlayerProps {
 }
 
 export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
-  const { addStudySession, completeSession, state } = useStudyApp();
+  const { addStudySession, completeSession } = useStudyApp();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -501,9 +499,15 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
   const [finalScore, setFinalScore] = useState({ correct: 0, total: 0 });
 
   useEffect(() => {
-    const session = addStudySession(quiz.subjectId, 'quiz');
-    setSessionId(session.id);
+    let active = true;
     setStartTime(Date.now());
+    (async () => {
+      const session = await addStudySession(quiz.subjectId, 'quiz');
+      if (active) setSessionId(session.id);
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const currentQ = quiz.questions[currentQuestion];
@@ -577,7 +581,7 @@ export function QuizPlayer({ quiz, onComplete }: QuizPlayerProps) {
               </div>
             </div>
 
-            <Button onClick={onComplete} className="w-full">
+            <Button onClick={() => onComplete?.(finalScore.correct, finalScore.total)} className="w-full">
               <ArrowRight className="h-4 w-4 mr-2" />
               Geri Dön
             </Button>
